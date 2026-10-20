@@ -6,7 +6,7 @@ if (MC_EXT.skip) return;
 // ==UserScript==
 // @name         Merged Chat (Kick + VK Play Live)
 // @namespace    grpzdc.mergedchat
-// @version      6.45
+// @version      6.46
 // @description  Перехватывает WebSocket реальных чатов Kick и VK Play Live, собирает все сообщения и рисует единую ленту своим дизайном. Сохраняет весь функционал родных чатов (авторизация, бан и т.д.).
 // @match        https://kick.com/popout/*/chat*
 // @match        https://dashboard.kick.com/*
@@ -1316,6 +1316,24 @@ if (MC_EXT.skip) return;
             #stale-banner:hover{background:var(--accent-bright)}
             #stale-banner:active{transform:translateX(-50%) scale(.97)}
             @media (prefers-reduced-motion:reduce){.msg{animation:none}}
+            /* свой срок тайм-аута в меню ленты: поле, ползунок, кнопка на всю ширину */
+            .timeout-pop{min-width:248px}
+            .timeout-pop .tp-custom{display:flex;flex-direction:column;gap:6px;padding-top:8px;border-top:1px solid var(--border)}
+            .timeout-pop .tp-sub{font-size:11px;color:var(--muted)}
+            .timeout-pop .dp{display:flex;flex-direction:column;gap:6px}
+            .timeout-pop .dp-row{display:flex;align-items:center;gap:5px}
+            .timeout-pop .dp-num{width:64px}
+            .timeout-pop .dp-num,.timeout-pop .dp-unit{height:28px;padding:0 6px;border:1px solid var(--border);border-radius:6px;background:var(--surface-0);color:var(--text);font:inherit;font-size:13px}
+            .timeout-pop .dp-human{font-size:11px;color:var(--muted);white-space:nowrap}
+            .timeout-pop .tp-set{width:100%;background:var(--accent);border-color:var(--accent-dark);color:var(--accent-contrast)}
+            .timeout-pop .tp-set:hover{background:var(--accent-bright)}
+            .timeout-pop .tp-set:disabled{background:var(--surface-2);border-color:var(--border);color:var(--muted);opacity:1}
+            .timeout-pop .dp-range{-webkit-appearance:none;appearance:none;height:20px;margin:0;background:transparent;cursor:pointer}
+            .timeout-pop .dp-range::-webkit-slider-runnable-track{height:4px;border-radius:4px;background:linear-gradient(to right,var(--accent) var(--p,0%),color-mix(in srgb,var(--text) 16%,transparent) var(--p,0%))}
+            .timeout-pop .dp-range::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;margin-top:-6px;border-radius:50%;background:var(--panel);border:2px solid var(--accent);transition:transform .1s ease}
+            .timeout-pop .dp-range:hover::-webkit-slider-thumb{transform:scale(1.12)}
+            .timeout-pop .dp-range:active::-webkit-slider-thumb{transform:scale(.95)}
+            .timeout-pop .dp-range:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
             /* Выделение сообщений человека: тонировка поверх фона любой темы (inset-слой не трогает background) */
             .msg.highlighted:not(.awaiting):not(.reply-to-me){box-shadow:inset 3px 0 0 var(--mc-hl,#ffd700),inset 0 0 0 999px color-mix(in srgb,var(--mc-hl,#ffd700) 26%,transparent)!important}
         `;
@@ -2265,16 +2283,26 @@ if (MC_EXT.skip) return;
             .hist-actions>button:hover,#more:hover{background:var(--surface-3)}
             .hist-actions .danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 45%,var(--border))}
             .hist-actions .danger:hover,.hist-actions .danger.armed{background:var(--danger);border-color:var(--danger);color:#fff}
-            .seg button.on{background:var(--accent-soft);box-shadow:inset 0 -2px var(--accent)}
-            .custom-to{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px;font-size:12px;color:var(--muted);animation:hist-in .14s ease-out}
-            .custom-to input,.custom-to select{height:30px;border:1px solid var(--border);border-radius:8px;background:var(--surface-0);color:var(--text);font:inherit;font-size:13px;padding:0 8px}
-            .custom-to input{width:80px}
-            .custom-to input:focus,.custom-to select:focus{outline:2px solid var(--accent);outline-offset:1px}
-            .custom-to input.invalid{border-color:var(--danger);outline-color:var(--danger)}
-            .custom-to button{height:30px;padding:0 11px;border:1px solid var(--border);border-radius:8px;background:var(--surface-1)}
-            .custom-to button:hover{background:var(--surface-3)}
-            .custom-to .go{background:var(--accent);border-color:var(--accent-dark);color:var(--accent-contrast)}
+            .custom-to{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-top:10px;font-size:12px;color:var(--muted)}
+            .custom-to .ct-l{flex:0 0 auto}
+            .custom-to .go{height:30px;padding:0 12px;border:1px solid var(--accent-dark);border-radius:8px;background:var(--accent);color:var(--accent-contrast);white-space:nowrap}
             .custom-to .go:hover{background:var(--accent-bright)}
+            .custom-to .go:disabled{background:var(--surface-1);border-color:var(--border);color:var(--muted);opacity:1}
+            .dp{flex:1 1 260px;display:flex;align-items:center;gap:10px;min-width:0}
+            .dp-row{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+            .dp-num,.dp-unit{height:30px;border:1px solid var(--border);border-radius:8px;background:var(--surface-0);color:var(--text);font:inherit;font-size:13px;padding:0 8px}
+            .dp-num{width:72px}
+            .dp-num:focus,.dp-unit:focus{outline:2px solid var(--accent);outline-offset:1px}
+            .dp-num.invalid{border-color:var(--danger);outline-color:var(--danger)}
+            .dp-human{font-size:12px;color:var(--muted);white-space:nowrap}
+            .dp-human:empty{display:none}
+            .dp-range{flex:1 1 120px;min-width:100px}
+            .dp-range{-webkit-appearance:none;appearance:none;height:20px;margin:0;background:transparent;cursor:pointer}
+            .dp-range::-webkit-slider-runnable-track{height:4px;border-radius:4px;background:linear-gradient(to right,var(--accent) var(--p,0%),color-mix(in srgb,var(--text) 16%,transparent) var(--p,0%))}
+            .dp-range::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;margin-top:-6px;border-radius:50%;background:var(--panel);border:2px solid var(--accent);transition:transform .1s ease}
+            .dp-range:hover::-webkit-slider-thumb{transform:scale(1.12)}
+            .dp-range:active::-webkit-slider-thumb{transform:scale(.95)}
+            .dp-range:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
             #notice{margin-top:10px;padding:7px 10px;border-radius:8px;font-size:12.5px;border:1px solid var(--accent-medium);background:var(--accent-soft);
                 animation:hist-in .18s ease-out}
             #notice.bad{border-color:color-mix(in srgb,var(--danger) 40%,transparent);background:color-mix(in srgb,var(--danger) 12%,transparent)}
@@ -2326,49 +2354,27 @@ if (MC_EXT.skip) return;
         function histActions(presets, unbanAct){
             const buttons = presets.map(([min, label]) => `<button data-uact="${min === 'stream' ? 'stream-timeout' : 'timeout'}" data-min="${esc(min)}">${esc(label)}</button>`).join('');
             return `<div class="hist-actions"><div class="seg" role="group" aria-label="Тайм-аут"><span class="seg-l">${HIST_ICONS.clock}Тайм-аут</span>${buttons}`
-                + `<button type="button" data-custom-to title="Свой срок" aria-expanded="false">…</button></div><span class="sp"></span>`
+                + `</div><span class="sp"></span>`
                 + `<button data-uact="${unbanAct}" title="Снять бан и тайм-аут">${HIST_ICONS.undo}Снять</button>`
                 + `<button class="danger" data-uact="ban" title="Забанить навсегда (нажать два раза)">${HIST_ICONS.ban}<span>Бан</span></button></div>`
-                + `<form class="custom-to" hidden><span>Свой срок</span><input type="number" min="1" step="1" value="90" aria-label="Срок">`
-                + `<select aria-label="Единица"><option value="minute">мин</option><option value="hour">ч</option><option value="day">дн</option><option value="week">нед</option></select>`
-                + `<button type="submit" class="go">Выдать</button><button type="button" data-cancel>Отмена</button></form>`;
+                + `<form class="custom-to"><span class="ct-l">Свой срок</span>${durationPickerHtml()}<button type="submit" class="go" disabled>Тайм-аут</button></form>`;
         }
-        // строка «свой срок»: срок вводится в самом окне (prompt из окна ленты Chrome глушит, пока в фокусе это окно)
+        // строка «свой срок»: вводится в самом окне (prompt из окна ленты Chrome глушит, пока в фокусе это окно)
         function histWireCustomTimeout(w, run){
-            const doc = w.document;
-            const form = doc.querySelector('.custom-to');
-            const toggle = doc.querySelector('[data-custom-to]');
-            if(!form || !toggle) return;
-            const input = form.querySelector('input'), unit = form.querySelector('select'), go = form.querySelector('.go');
-            const show = on => {
-                form.hidden = !on;
-                toggle.classList.toggle('on', on);
-                toggle.setAttribute('aria-expanded', String(on));
-                if(on){ input.focus(); input.select(); }
-            };
-            toggle.addEventListener('click', () => show(form.hidden));
-            form.querySelector('[data-cancel]').addEventListener('click', () => show(false));
-            form.addEventListener('keydown', e => { if(e.key === 'Escape') show(false); });
-            unit.addEventListener('change', () => { input.max = String(maxDurationValue(unit.value)); });
-            input.addEventListener('input', () => {
-                input.classList.remove('invalid');
-                const notice = doc.getElementById('notice');
-                if(notice && notice.classList.contains('bad')) notice.hidden = true;
+            const form = w.document.querySelector('.custom-to');
+            if(!form) return;
+            const go = form.querySelector('.go');
+            const picker = wireDurationPicker(form, m => {
+                go.disabled = !m;
+                go.textContent = m ? `Тайм-аут на ${humanDuration(m)}` : 'Тайм-аут';
             });
             form.addEventListener('submit', e => {
                 e.preventDefault();
-                const n = Number(input.value);
-                if(!Number.isInteger(n) || n < 1 || n > maxDurationValue(unit.value)){
-                    input.classList.add('invalid');
-                    histNotice(w, `Срок — целое число от 1 до ${maxDurationValue(unit.value)}`, true);
-                    input.focus();
-                    return;
-                }
+                if(!picker.minutes) return;
                 go.dataset.uact = 'timeout';
-                go.dataset.min = String(durationToMinutes(n, unit.value));
+                go.dataset.min = String(picker.minutes);
                 run(go); // действие читает срок сразу, до первого await
                 delete go.dataset.uact; delete go.dataset.min;
-                show(false);
             });
         }
         function histTime(raw){
@@ -3705,6 +3711,80 @@ if (MC_EXT.skip) return;
             if(minutes % 60 === 0) return (minutes / 60) + ' ч';
             return minutes + ' мин';
         }
+        // --- Свой срок тайм-аута: поле + ползунок от нуля, единицы поправляются сами (120 мин → 2 ч, 1440 мин → 1 дн) ---
+        const DURATION_STEPS = (() => {
+            const a = [0];
+            for(let m = 1; m <= 10; m++) a.push(m);
+            for(let m = 15; m <= 60; m += 5) a.push(m);
+            for(let m = 75; m <= 240; m += 15) a.push(m);
+            for(let h = 5; h <= 24; h++) a.push(h * 60);
+            for(let h = 36; h <= 168; h += 12) a.push(h * 60);
+            return a;
+        })();
+        const DURATION_UNIT_MUL = { minute:1, hour:60, day:1440, week:10080 };
+        function humanDuration(min){
+            if(!min) return '';
+            if(min === 10080) return '1 нед';
+            const d = Math.floor(min / 1440), h = Math.floor(min % 1440 / 60), m = min % 60;
+            return [d && `${d} дн`, h && `${h} ч`, m && `${m} мин`].filter(Boolean).join(' ');
+        }
+        function bestDurationUnit(min){
+            return min % 10080 === 0 ? 'week' : min % 1440 === 0 ? 'day' : min % 60 === 0 ? 'hour' : 'minute';
+        }
+        function durationPickerHtml(){
+            return `<div class="dp"><div class="dp-row">`
+                + `<input class="dp-num" type="number" min="0" step="1" inputmode="decimal" placeholder="0" aria-label="Срок">`
+                + `<select class="dp-unit" aria-label="Единица"><option value="minute">мин</option><option value="hour">ч</option><option value="day">дн</option><option value="week">нед</option></select>`
+                + `<span class="dp-human"></span></div>`
+                + `<input class="dp-range" type="range" min="0" max="${DURATION_STEPS.length - 1}" step="1" value="0" aria-label="Срок ползунком"></div>`;
+        }
+        // onChange(minutes) — после каждого изменения; minutes = 0, пока срок не выбран
+        function wireDurationPicker(root, onChange){
+            const num = root.querySelector('.dp-num'), unit = root.querySelector('.dp-unit');
+            const range = root.querySelector('.dp-range'), human = root.querySelector('.dp-human');
+            let minutes = 0;
+            const show = () => {
+                // «9999 мин = 6 дн 22 ч 39 мин»: подсказка, когда в поле написано не так, как читается
+                const label = { minute:'мин', hour:'ч', day:'дн', week:'нед' }[unit.value];
+                human.textContent = minutes && humanDuration(minutes) !== `${num.value} ${label}` ? '= ' + humanDuration(minutes) : '';
+                range.style.setProperty('--p', (Number(range.value) / Number(range.max) * 100) + '%');
+                if(onChange) onChange(minutes);
+            };
+            const syncRange = () => {
+                let i = 0;
+                DURATION_STEPS.forEach((step, k) => { if(step <= minutes) i = k; });
+                range.value = String(i);
+            };
+            const normalize = () => {
+                if(!minutes) return;
+                unit.value = bestDurationUnit(minutes);
+                num.value = String(minutes / DURATION_UNIT_MUL[unit.value]);
+            };
+            const fromInput = () => {
+                const n = Number(String(num.value).replace(',', '.'));
+                if(!num.value || !Number.isFinite(n) || n <= 0){
+                    minutes = 0;
+                    num.classList.toggle('invalid', num.value !== '' && !(n === 0));
+                } else {
+                    minutes = Math.max(1, Math.min(KICK_MAX_TIMEOUT_MINUTES, Math.round(n * DURATION_UNIT_MUL[unit.value])));
+                    num.classList.remove('invalid');
+                }
+                syncRange();
+                show();
+            };
+            range.addEventListener('input', () => {
+                minutes = DURATION_STEPS[Number(range.value)] || 0;
+                num.classList.remove('invalid');
+                if(minutes) normalize(); else num.value = '';
+                show();
+            });
+            num.addEventListener('input', fromInput);
+            unit.addEventListener('change', fromInput);
+            // ушёл из поля — переписываем крупнее: 120 мин → 2 ч, 1440 мин → 1 дн, больше недели → 1 нед
+            num.addEventListener('change', () => { normalize(); show(); });
+            show();
+            return { get minutes(){ return minutes; }, focus(){ num.focus(); } };
+        }
         function durationToMinutes(value, unit){
             const n = Math.max(1, Math.floor(Number(value) || 0));
             const mul = unit === 'week' ? 10080 : unit === 'day' ? 1440 : unit === 'hour' ? 60 : 1;
@@ -3730,25 +3810,17 @@ if (MC_EXT.skip) return;
                     ${isVk ? '<button data-stream="1">До конца стрима</button>' : '<button data-min="1440">1 день</button><button data-min="10080">1 неделя</button>'}
                 </div>
                 <div class="tp-custom">
-                    <select>
-                        <option value="minute">Минуты</option>
-                        <option value="hour">Часы</option>
-                        <option value="day">Дни</option>
-                        <option value="week">Недели</option>
-                    </select>
-                    <input type="number" min="1" max="${KICK_MAX_TIMEOUT_MINUTES}" step="1" value="90">
-                    <button class="tp-set">ОК</button>
+                    <div class="tp-sub">Свой срок</div>
+                    ${durationPickerHtml()}
+                    <button class="tp-set" disabled>Тайм-аут</button>
                 </div>`;
             document.body.appendChild(timeoutPop);
-            const unitEl = timeoutPop.querySelector('select');
-            const valueEl = timeoutPop.querySelector('input');
-            unitEl.addEventListener('change', () => {
-                const max = maxDurationValue(unitEl.value);
-                valueEl.max = String(max);
-                if(Number(valueEl.value) > max) valueEl.value = String(max);
+            const setBtn = timeoutPop.querySelector('.tp-set');
+            const picker = wireDurationPicker(timeoutPop.querySelector('.tp-custom'), m => {
+                setBtn.disabled = !m;
+                setBtn.textContent = m ? `Тайм-аут на ${humanDuration(m)}` : 'Тайм-аут';
             });
-            valueEl.addEventListener('input', () => valueEl.classList.remove('invalid'));
-            valueEl.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); timeoutPop.querySelector('.tp-set').click(); } });
+            timeoutPop.querySelector('.dp-num').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); setBtn.click(); } });
             const r = btn.getBoundingClientRect();
             timeoutPop.style.left = Math.min(window.innerWidth - timeoutPop.offsetWidth - 6, Math.max(6, r.right - timeoutPop.offsetWidth)) + 'px';
             timeoutPop.style.top = Math.min(window.innerHeight - timeoutPop.offsetHeight - 6, r.bottom + 6) + 'px';
@@ -3757,14 +3829,8 @@ if (MC_EXT.skip) return;
                 if(preset){ doTimeout(row, Number(preset.dataset.min), btn).catch(err => { console.error('mod error', err); status(row, 'error', true); flash(btn,'ошибка '+err.message); }); closeTimeoutMenu(); return; }
                 if(e.target.closest('[data-stream]')){ doVkStreamTimeout(row, btn).catch(err => { console.error('mod error', err); status(row, 'error', true); flash(btn,'ошибка '+err.message); }); closeTimeoutMenu(); return; }
                 if(e.target.closest('.tp-set')){
-                    const unit = unitEl.value;
-                    const value = Number(valueEl.value);
-                    if(!Number.isInteger(value) || value < 1 || value > maxDurationValue(unit)){
-                        valueEl.classList.add('invalid');
-                        valueEl.focus();
-                        return;
-                    }
-                    doTimeout(row, durationToMinutes(value, unit), btn).catch(err => { console.error('mod error', err); status(row, 'error', true); flash(btn,'ошибка '+err.message); });
+                    if(!picker.minutes) return;
+                    doTimeout(row, picker.minutes, btn).catch(err => { console.error('mod error', err); status(row, 'error', true); flash(btn,'ошибка '+err.message); });
                     closeTimeoutMenu();
                 }
             });
