@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="ui.css">
+</head>
+<body class="popup">
+  <h1><img src="icons/48.png" alt="">Merged Chat <span class="ver" id="ver"></span></h1>
+
+  <button id="open" class="btn accent wide" style="margin-top:8px">Открыть чат</button>
+
+  <div id="upd" class="group update" hidden>
+    <div class="group-title"><strong>Обновление</strong></div>
+    <div id="upd-text"></div>
+    <button id="upd-go" class="btn accent wide">Обновить</button>
+  </div>
+
+  <div class="group">
+    <div class="group-title"><strong>Сборщики</strong><span id="where"></span></div>
+    <div id="helpers"></div>
+    <div id="failing"></div>
+    <div class="actions">
+      <button id="restart" class="btn">Перезапустить всё</button>
+      <button id="check" class="btn">Проверить обновления</button>
+    </div>
+    <div class="note" id="note"></div>
+  </div>
+
+  <details>
+    <summary>Настройки</summary>
+    <div class="group">
+      <div class="group-title"><strong>Где держать</strong></div>
+      <div class="choices">
+        <input type="radio" name="placement" id="pl-hidden" value="hidden"><label for="pl-hidden">Скрыто</label>
+        <input type="radio" name="placement" id="pl-tabs" value="tabs"><label for="pl-tabs">Вкладки</label>
+        <input type="radio" name="placement" id="pl-window" value="window"><label for="pl-window">Свёрнутое окно</label>
+      </div>
+      <div class="note">«Скрыто» — без окон и вкладок. Остальное — запасной вариант, если сайт что-то поменяет.</div>
+    </div>
+    <div class="group">
+      <div class="group-title"><strong>Что держать</strong></div>
+      <label class="check"><input type="checkbox" data-helper="vk"><span>VK чат<small>сообщения VK</small></span></label>
+      <label class="check"><input type="checkbox" data-helper="kick"><span>Kick чат<small>история при заходе, тайм-ауты из родного чата</small></span></label>
+      <label class="check"><input type="checkbox" data-helper="dash"><span>Kick dashboard<small>запасной источник токена, обычно не нужен</small></span></label>
+      <label class="check"><input type="checkbox" id="autoclose"><span>Гасить, когда чат закрыт<small>через минуту после закрытия</small></span></label>
+    </div>
+    <div class="group">
+      <div class="group-title"><strong>Адрес обновлений</strong></div>
+      <input type="url" id="update-url" placeholder="update.json">
+      <div class="actions">
+        <button id="save" class="btn">Сохранить</button>
+        <button id="folder" class="btn">Папка расширения…</button>
+      </div>
+    </div>
+  </details>
+  <script type="module" src="theme.js"></script>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

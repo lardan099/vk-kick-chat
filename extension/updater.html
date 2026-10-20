@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Merged Chat — обновление</title>
+<link rel="stylesheet" href="ui.css">
+</head>
+<body class="page">
+  <main class="sheet">
+    <h1><img src="icons/48.png" alt="">Merged Chat <span class="ver" id="ver"></span></h1>
+
+    <section id="setup" hidden>
+      <div class="group">
+        <div class="group-title"><strong>Один раз: доступ к папке расширения</strong></div>
+        <p class="note">Тогда обновления ставятся одной кнопкой — без скачивания файлов и ссылок.</p>
+        <ol>
+          <li>Нажми кнопку ниже.</li>
+          <li>Выбери папку, где лежит расширение (в ней есть <code>manifest.json</code>) — ту же, что выбирал в «Загрузить распакованное».</li>
+          <li>Chrome спросит разрешение на изменение файлов — разреши (лучше «Разрешать всегда», если есть).</li>
+        </ol>
+        <button id="pick" class="btn accent wide">Выбрать папку расширения</button>
+      </div>
+    </section>
+
+    <section id="update" hidden>
+      <div class="group">
+        <div class="group-title"><strong id="title">Проверяю обновления…</strong></div>
+        <div id="versions"></div>
+        <p id="notes" class="note"></p>
+        <button id="go" class="btn accent wide" hidden>Обновить</button>
+      </div>
+    </section>
+
+    <div class="bar" id="progress" hidden><i></i></div>
+    <p id="status" class="status"></p>
+    <div id="done" class="done" hidden>
+      <svg viewBox="0 0 20 20"><path d="m4 10.5 4 4 8-9"/></svg>
+      <span id="done-text">Готово</span>
+    </div>
+    <p class="note" id="folder"></p>
+  </main>
+  <script type="module" src="theme.js"></script>
+  <script type="module" src="updater.js"></script>
+</body>
+</html>

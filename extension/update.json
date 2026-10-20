@@ -1,0 +1,101 @@
+{
+  "version": "6.43",
+  "notes": "Первая версия расширения",
+  "files": [
+    {
+      "path": "background.js",
+      "sha256": "945c918f01fa5ebebbd6cfe5db07f05bc5b0d6a792fd4b99c008545e010888e7",
+      "size": 31386
+    },
+    {
+      "path": "chat.js",
+      "sha256": "88b511d5630bc4d60b4fb70761c3e83d908f69675a33f14251e1578d0a0086a3",
+      "size": 282127
+    },
+    {
+      "path": "config.js",
+      "sha256": "c75f6e15d32f1ad68653134028d15a4f78ad327850682253fe9220c819ed49b6",
+      "size": 4108
+    },
+    {
+      "path": "ext-ui.js",
+      "sha256": "5a51c65633548a4fe1c3a01807702bddc040419688095cfbe5a897536075477a",
+      "size": 16482
+    },
+    {
+      "path": "gm-shim.js",
+      "sha256": "3ff04dcf3023cfeef6ab81d8c21e86d4a8afdcc8df3d9bbc8dcb97e8bfee0c6e",
+      "size": 18626
+    },
+    {
+      "path": "icons/128.png",
+      "sha256": "8d2be9feed4fd3c8f438aa987cad38d308dce504203b068728d55d37c97a9bef",
+      "size": 1777
+    },
+    {
+      "path": "icons/16.png",
+      "sha256": "3aaf9db037e3ced5096282cb30b40687a2384d400039aac7d81820568666df15",
+      "size": 293
+    },
+    {
+      "path": "icons/32.png",
+      "sha256": "775c0977578c97af506dc008c152b82d07c2b122059678b4afcb2b3be506da61",
+      "size": 484
+    },
+    {
+      "path": "icons/48.png",
+      "sha256": "61ec1821ee1758547a23d296b8d09c62f556d9657fd466761d0627ae7a2196cd",
+      "size": 668
+    },
+    {
+      "path": "manifest.json",
+      "sha256": "9f490c740f3d8c0487b2dcf6fcb6a92aa2f9e53f34fa450109b3560bde9909f5",
+      "size": 2018
+    },
+    {
+      "path": "offscreen.html",
+      "sha256": "2d8096fd2f1a36f0f1d690cb76e905b49c6031ed49a54ffb32b2f261987b9676",
+      "size": 409
+    },
+    {
+      "path": "offscreen.js",
+      "sha256": "e86d36dd48606eb0dda67e3130c8553c3321602b4207b524d6c5a2b56b7ba062",
+      "size": 1658
+    },
+    {
+      "path": "page-hook.js",
+      "sha256": "d2fe4d7b4ba9619e3774398c067a842a930f7be41e31881b1eec43e0669e1ca5",
+      "size": 5609
+    },
+    {
+      "path": "popup.html",
+      "sha256": "0cec0facd6c5a318353d41f0047e44a84dcc64c01b2cd4c2a47855f03103fae4",
+      "size": 3085
+    },
+    {
+      "path": "popup.js",
+      "sha256": "d7ea3f6492993300ac3c3ed4d417ae7798f36b9d9e570e22cb64474c215b70f8",
+      "size": 6965
+    },
+    {
+      "path": "theme.js",
+      "sha256": "fb26bdd850bf8fcf6e6e02235df6cf1f770a75e6eac41c2cbfcbb83e4ba13df9",
+      "size": 444
+    },
+    {
+      "path": "ui.css",
+      "sha256": "90f1e3385d09ee8a42f8f822c0e4aa37c496a3d93f3463479e54c8ff2d4a55eb",
+      "size": 5875
+    },
+    {
+      "path": "updater.html",
+      "sha256": "ece599163bda155790e803624e0e0341473eeca143001efaec287ac9e93aee43",
+      "size": 2036
+    },
+    {
+      "path": "updater.js",
+      "sha256": "c2d205c2811332d6e5f65b3eee2ed6aa80347c1193e4a03d1b98da43d8fb9d14",
+      "size": 10154
+    }
+  ]
+}

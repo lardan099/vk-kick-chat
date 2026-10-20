@@ -1,0 +1,89 @@
+/* Оформление окна расширения и страницы обновления — тот же язык, что у самого чата:
+   поверхности --surface-*, рамки --border, радиус 6–8px, акцент только на главном действии.
+   Значения по умолчанию — светлая тема чата (PANTONE 7506 C); theme.js подставляет
+   переменные той темы, что выбрана в чате. */
+:root{
+  --bg:#f9f3e7;--panel:#fdfbf6;--border:#b4a98f;--text:#28251f;--muted:#6d6659;
+  --accent:#7a6337;--accent-dark:#5c4825;--accent-bright:#947b48;--accent-contrast:#fff;
+  --accent-soft:rgba(122,99,55,.12);--accent-medium:rgba(122,99,55,.22);--accent-strong:rgba(122,99,55,.45);
+  --surface-0:#fbf7ef;--surface-1:#fcf9f3;--surface-2:#f5e9d1;--surface-3:#f1e1c1;
+  --ok:#3aa655;--wait:#d49a1e;--bad:#d24545
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:12px/1.45 Inter,system-ui,Arial,sans-serif}
+@keyframes breathe{50%{opacity:.35}}
+@keyframes open{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
+@keyframes turn{to{transform:rotate(360deg)}}
+
+h1{display:flex;align-items:center;gap:8px;margin:0;font-size:14px;font-weight:700}
+h1 img{width:20px;height:20px;border-radius:4px}
+h1 .ver{margin-left:auto;font-size:11px;font-weight:700;color:var(--muted)}
+h2{font-size:13px;margin:0 0 6px}
+p{margin:4px 0}
+code{background:var(--surface-2);padding:0 4px;border-radius:4px;border:1px solid var(--border)}
+ol{padding-left:18px;margin:6px 0 10px}
+li{margin:3px 0}
+
+button{font:inherit;cursor:pointer}
+.btn{border:1px solid var(--border);border-radius:6px;background:var(--surface-2);color:var(--text);padding:6px 10px;font-size:12px;
+  transition:background-color .12s,border-color .12s,transform .08s}
+.btn:hover{background:var(--surface-3)}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.55;cursor:default;transform:none}
+.btn.accent{background:var(--accent);border-color:var(--accent-dark);color:var(--accent-contrast);font-weight:700}
+.btn.accent:hover{background:var(--accent-bright)}
+.btn.wide{width:100%;padding:8px 10px;font-size:13px}
+.btn.icon{width:26px;height:26px;padding:0;display:grid;place-items:center;flex:0 0 auto}
+.btn svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.btn.turn svg{animation:turn .6s ease-in-out}
+
+.group{display:grid;gap:6px;padding:8px;margin-top:8px;border:1px solid var(--border);border-radius:8px;background:var(--surface-0);animation:open .14s ease-out}
+.group-title{display:flex;align-items:baseline;gap:6px}
+.group-title strong{color:var(--text)}
+.group-title span{margin-left:auto;color:var(--muted);font-size:11px}
+.row{display:grid;grid-template-columns:14px auto minmax(0,1fr) 26px;align-items:center;gap:8px;min-height:28px}
+.row img{width:14px;height:14px;border-radius:3px;flex:0 0 auto}
+.name{font-weight:700;white-space:nowrap}
+.state{min-width:0;display:flex;align-items:center;gap:5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.state.bad{color:var(--bad)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--muted);flex:0 0 auto}
+.dot.ok{background:var(--ok)}
+.dot.wait{background:var(--wait);animation:breathe 1.4s ease-in-out infinite}
+.dot.bad{background:var(--bad)}
+.actions{display:flex;gap:6px}
+.actions .btn{flex:1}
+.note{color:var(--muted);font-size:11px;line-height:1.4}
+
+/* выбор как у кнопок темы в чате */
+.choices{display:flex;gap:6px;flex-wrap:wrap}
+.choices input{display:none}
+.choices label{border:1px solid var(--border);border-radius:6px;background:var(--surface-2);color:var(--text);padding:5px 8px;cursor:pointer;
+  transition:background-color .12s,border-color .12s}
+.choices label:hover{background:var(--surface-3)}
+.choices input:checked+label{border-color:var(--accent-strong);background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent-medium)}
+.check{display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:2px 0}
+.check input{margin:2px 0 0;accent-color:var(--accent);width:14px;height:14px;flex:0 0 auto}
+.check small{display:block;color:var(--muted);font-size:11px}
+input[type=url]{width:100%;font:inherit;padding:6px 7px;border:1px solid var(--border);border-radius:5px;background:var(--surface-1);color:var(--text);outline:none}
+input[type=url]:focus{border-color:var(--accent)}
+details>summary{cursor:pointer;margin-top:8px;color:var(--muted);font-weight:700;user-select:none}
+details>summary:hover{color:var(--text)}
+
+.update{border-color:var(--accent-strong);background:var(--accent-soft)}
+
+/* окно значка */
+.popup{width:340px;padding:10px}
+
+/* страница обновления */
+.page{display:flex;justify-content:center;padding:24px}
+.sheet{width:100%;max-width:500px;padding:14px;border:1px solid var(--border);border-radius:8px;background:var(--panel);animation:open .14s ease-out}
+.sheet section{margin-top:12px}
+.status{min-height:1.4em;font-weight:700;margin:8px 0 0}
+.status.bad{color:var(--bad)}
+.bar{height:6px;margin-top:10px;border:1px solid var(--border);border-radius:4px;background:var(--surface-2);overflow:hidden}
+.bar>i{display:block;height:100%;width:0;background:var(--accent);transition:width .25s ease-out}
+.done{display:flex;align-items:center;gap:8px;margin-top:10px;font-weight:700;color:var(--ok);animation:open .16s ease-out}
+.done svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.versions{font-size:13px;margin:2px 0}
+.versions b{font-weight:700}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
