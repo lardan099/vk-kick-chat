@@ -2345,7 +2345,11 @@
             form.querySelector('[data-cancel]').addEventListener('click', () => show(false));
             form.addEventListener('keydown', e => { if(e.key === 'Escape') show(false); });
             unit.addEventListener('change', () => { input.max = String(maxDurationValue(unit.value)); });
-            input.addEventListener('input', () => input.classList.remove('invalid'));
+            input.addEventListener('input', () => {
+                input.classList.remove('invalid');
+                const notice = doc.getElementById('notice');
+                if(notice && notice.classList.contains('bad')) notice.hidden = true;
+            });
             form.addEventListener('submit', e => {
                 e.preventDefault();
                 const n = Number(input.value);
