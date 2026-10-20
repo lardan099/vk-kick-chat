@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Merged Chat (Kick + VK Play Live)
 // @namespace    grpzdc.mergedchat
-// @version      6.44
+// @version      6.45
 // @description  Перехватывает WebSocket реальных чатов Kick и VK Play Live, собирает все сообщения и рисует единую ленту своим дизайном. Сохраняет весь функционал родных чатов (авторизация, бан и т.д.).
 // @match        https://kick.com/popout/*/chat*
 // @match        https://dashboard.kick.com/*
@@ -83,14 +83,20 @@
         vkText: 'ВЕРХОВНАЯ РАДА c гайдом по тг, записью стримов +комменты в основе :zhmilJamba: на 1, 3, 6, 12 месяцев (400р/месяц) +НИК ИЗ ТГ через "@" +ЗАПУСТИТЕ БОТА https://t.me/vipgrpzdc_bot :grpzdcPUZ: https://new.donatepay.ru/@GRPZDC',
         kickText: 'ВЕРХОВНАЯ РАДА c гайдом по тг, записью стримов +комменты в основе [emote:51522:grpzdcXDD] на 1, 3, 6, 12 месяцев (400р/месяц) +НИК ИЗ ТГ через "@" +ЗАПУСТИТЕ БОТА https://t.me/vipgrpzdc_bot [emote:51529:grpzdcCL] https://new.donatepay.ru/@GRPZDC'
     }];
-        const VK_NICK_COLORS = {
-        1:'#e64646', 2:'#e68a46', 3:'#d6b73f', 4:'#59b35a',
-        5:'#46a8e6', 6:'#9961f9', 7:'#d65ad6', 8:'#d64f7f',
-        9:'#16a085', 10:'#ff6b6b', 11:'#e542ff', 12:'#00bcd4',
-        13:'#8bc34a', 14:'#ff9800', 15:'#03a9f4'
-    };
-    function vkNickColor(code) {
-        return VK_NICK_COLORS[Number(code)] || '';
+    // Палитра ников VK — та же, что в коде live.vkvideo.ru: nickColor — номер 0–15,
+    // без номера VK берёт цвет по хешу ника (тот же хеш, что у них)
+    const VK_NICK_COLORS = ['#D66E34','#B8AAFF','#1D90FF','#9961F9','#59A840','#E73629','#DE6489','#20BBA1',
+        '#F8B301','#0099BB','#7BBEFF','#E542FF','#A36C59','#8BA259','#00A9FF','#A20BFF'];
+    function vkColorCode(code) {
+        const n = code === '' || code === null || code === undefined ? NaN : Number(code);
+        return Number.isInteger(n) && n >= 0 && n < VK_NICK_COLORS.length ? n : -1;
+    }
+    function vkNickColor(code, nick = '') {
+        const n = vkColorCode(code);
+        if (n >= 0) return VK_NICK_COLORS[n];
+        if (!nick) return '';
+        const hash = String(nick).split('').reduce((h, ch) => { h = (h << 5) - h + ch.charCodeAt(0); return h & h; }, 0);
+        return VK_NICK_COLORS[Math.min(VK_NICK_COLORS.length - 1, Math.floor(Math.abs(hash) / (2147483647 / VK_NICK_COLORS.length)))];
     }
 
     // Отключать можно только одну платформу: если обе выключены (ручная правка
@@ -149,6 +155,7 @@
     function rememberUserColor(platform, name, userId, color) {
         if(!color) return;
         const colors = GM_getValue(USER_COLORS_KEY, {}) || {};
+        if(colors[userColorKey(platform, name, userId)] === color && colors[userColorKey(platform, name, '')] === color) return;
         colors[userColorKey(platform, name, userId)] = color;
         colors[userColorKey(platform, name, '')] = color;
         GM_setValue(USER_COLORS_KEY, colors);
@@ -819,7 +826,9 @@
                 rawId: id,
                 userId,
                 name,
-                color: getUserColor('vk', name, userId) || vkNickColor(u.nickColor),
+                // цвет, который VK прислал сейчас, важнее запомненного: человек мог сменить цвет
+                color: vkColorCode(u.nickColor) >= 0 ? vkNickColor(u.nickColor) : (getUserColor('vk', name, userId) || vkNickColor('', name)),
+                colorExact: vkColorCode(u.nickColor) >= 0,
                 nickColor: u.nickColor,
                 badges: (u.badges || []).map(b => ({ url: b.smallUrl || b.mediumUrl || b.largeUrl || '', name: b.achievement?.name || b.name || '' })),
                 isMod: !!(u.isChatModerator || u.isChannelModerator),
@@ -2132,7 +2141,7 @@
             const normalizedRawId = msg.rawId || (msg.id ? String(msg.id).replace(/^(kick|vk)_/, '') : '');
             div.dataset.chatroomid = msg.chatroomId || '';
             div.dataset.userid = msg.userId || '';
-            const color = rememberedColor(msg.platform, msg.name, msg.userId) || msg.color || colorFor(msg.name);
+            const color = (msg.colorExact && msg.color) || rememberedColor(msg.platform, msg.name, msg.userId) || msg.color || colorFor(msg.name);
             rememberColor(msg.platform, msg.name, msg.userId || '', color);
             if(messageIsPrivileged(msg)) rememberPrivilegedUser(msg.platform, msg.name);
 
@@ -2251,6 +2260,16 @@
             .hist-actions>button:hover,#more:hover{background:var(--surface-3)}
             .hist-actions .danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 45%,var(--border))}
             .hist-actions .danger:hover,.hist-actions .danger.armed{background:var(--danger);border-color:var(--danger);color:#fff}
+            .seg button.on{background:var(--accent-soft);box-shadow:inset 0 -2px var(--accent)}
+            .custom-to{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px;font-size:12px;color:var(--muted);animation:hist-in .14s ease-out}
+            .custom-to input,.custom-to select{height:30px;border:1px solid var(--border);border-radius:8px;background:var(--surface-0);color:var(--text);font:inherit;font-size:13px;padding:0 8px}
+            .custom-to input{width:80px}
+            .custom-to input:focus,.custom-to select:focus{outline:2px solid var(--accent);outline-offset:1px}
+            .custom-to input.invalid{border-color:var(--danger);outline-color:var(--danger)}
+            .custom-to button{height:30px;padding:0 11px;border:1px solid var(--border);border-radius:8px;background:var(--surface-1)}
+            .custom-to button:hover{background:var(--surface-3)}
+            .custom-to .go{background:var(--accent);border-color:var(--accent-dark);color:var(--accent-contrast)}
+            .custom-to .go:hover{background:var(--accent-bright)}
             #notice{margin-top:10px;padding:7px 10px;border-radius:8px;font-size:12.5px;border:1px solid var(--accent-medium);background:var(--accent-soft);
                 animation:hist-in .18s ease-out}
             #notice.bad{border-color:color-mix(in srgb,var(--danger) 40%,transparent);background:color-mix(in srgb,var(--danger) 12%,transparent)}
@@ -2302,9 +2321,46 @@
         function histActions(presets, unbanAct){
             const buttons = presets.map(([min, label]) => `<button data-uact="${min === 'stream' ? 'stream-timeout' : 'timeout'}" data-min="${esc(min)}">${esc(label)}</button>`).join('');
             return `<div class="hist-actions"><div class="seg" role="group" aria-label="Тайм-аут"><span class="seg-l">${HIST_ICONS.clock}Тайм-аут</span>${buttons}`
-                + `<button data-uact="timeout" data-min="custom" title="Свой срок">…</button></div><span class="sp"></span>`
+                + `<button type="button" data-custom-to title="Свой срок" aria-expanded="false">…</button></div><span class="sp"></span>`
                 + `<button data-uact="${unbanAct}" title="Снять бан и тайм-аут">${HIST_ICONS.undo}Снять</button>`
-                + `<button class="danger" data-uact="ban" title="Забанить навсегда (нажать два раза)">${HIST_ICONS.ban}<span>Бан</span></button></div>`;
+                + `<button class="danger" data-uact="ban" title="Забанить навсегда (нажать два раза)">${HIST_ICONS.ban}<span>Бан</span></button></div>`
+                + `<form class="custom-to" hidden><span>Свой срок</span><input type="number" min="1" step="1" value="90" aria-label="Срок">`
+                + `<select aria-label="Единица"><option value="minute">мин</option><option value="hour">ч</option><option value="day">дн</option><option value="week">нед</option></select>`
+                + `<button type="submit" class="go">Выдать</button><button type="button" data-cancel>Отмена</button></form>`;
+        }
+        // строка «свой срок»: срок вводится в самом окне (prompt из окна ленты Chrome глушит, пока в фокусе это окно)
+        function histWireCustomTimeout(w, run){
+            const doc = w.document;
+            const form = doc.querySelector('.custom-to');
+            const toggle = doc.querySelector('[data-custom-to]');
+            if(!form || !toggle) return;
+            const input = form.querySelector('input'), unit = form.querySelector('select'), go = form.querySelector('.go');
+            const show = on => {
+                form.hidden = !on;
+                toggle.classList.toggle('on', on);
+                toggle.setAttribute('aria-expanded', String(on));
+                if(on){ input.focus(); input.select(); }
+            };
+            toggle.addEventListener('click', () => show(form.hidden));
+            form.querySelector('[data-cancel]').addEventListener('click', () => show(false));
+            form.addEventListener('keydown', e => { if(e.key === 'Escape') show(false); });
+            unit.addEventListener('change', () => { input.max = String(maxDurationValue(unit.value)); });
+            input.addEventListener('input', () => input.classList.remove('invalid'));
+            form.addEventListener('submit', e => {
+                e.preventDefault();
+                const n = Number(input.value);
+                if(!Number.isInteger(n) || n < 1 || n > maxDurationValue(unit.value)){
+                    input.classList.add('invalid');
+                    histNotice(w, `Срок — целое число от 1 до ${maxDurationValue(unit.value)}`, true);
+                    input.focus();
+                    return;
+                }
+                go.dataset.uact = 'timeout';
+                go.dataset.min = String(durationToMinutes(n, unit.value));
+                run(go); // действие читает срок сразу, до первого await
+                delete go.dataset.uact; delete go.dataset.min;
+                show(false);
+            });
         }
         function histTime(raw){
             let d = null;
@@ -2492,7 +2548,6 @@
                         histRowStatus(row, 'удалено');
                     } else if(act === 'timeout'){
                         let min = btn.dataset.min;
-                        if(min === 'custom') min = prompt('Тайм-аут в минутах, максимум 10080', '90');
                         min = durationToMinutes(min, 'minute');
                         await kickApi('POST', `https://kick.com/api/v2/channels/${KICK_SLUG}/bans`, { duration:min, banned_username:name, permanent:false });
                         histNotice(w, `Тайм-аут ${formatDuration(min)} — готово`);
@@ -2515,6 +2570,7 @@
                 const btn = e.target.closest('[data-uact],[data-hact]');
                 if(btn && histArmed(btn)) { histDisarm(btn); runKickHistoryAction(btn); }
             });
+            histWireCustomTimeout(w, runKickHistoryAction);
             let loading = false;
             let done = false;
             let cursor = '0';
@@ -2615,7 +2671,6 @@
                         histRowStatus(row, 'удалено');
                     } else if(act === 'timeout'){
                         let min = btn.dataset.min;
-                        if(min === 'custom') min = prompt('Тайм-аут в минутах', '90');
                         min = durationToMinutes(min, 'minute');
                         await vkApi('PUT', `https://api.live.vkvideo.ru/v1/channel/${KICK_SLUG}/public_video_stream/ban/stream/slot/default`, {
                             user_id:userId,
@@ -2655,6 +2710,7 @@
                 const btn = e.target.closest('[data-uact],[data-hact]');
                 if(btn && histArmed(btn)) { histDisarm(btn); runVkHistoryAction(btn); }
             });
+            histWireCustomTimeout(w, runVkHistoryAction);
             let after = '';
             let loading = false;
             let done = false;
@@ -3635,10 +3691,10 @@
             if(timeoutPop){ timeoutPop.remove(); timeoutPop = null; }
         }
         function formatDuration(minutes){
-            if(minutes % 10080 === 0) return (minutes / 10080) + 'w';
-            if(minutes % 1440 === 0) return (minutes / 1440) + 'd';
-            if(minutes % 60 === 0) return (minutes / 60) + 'h';
-            return minutes + 'm';
+            if(minutes % 10080 === 0) return (minutes / 10080) + ' нед';
+            if(minutes % 1440 === 0) return (minutes / 1440) + ' дн';
+            if(minutes % 60 === 0) return (minutes / 60) + ' ч';
+            return minutes + ' мин';
         }
         function durationToMinutes(value, unit){
             const n = Math.max(1, Math.floor(Number(value) || 0));
@@ -3682,6 +3738,8 @@
                 valueEl.max = String(max);
                 if(Number(valueEl.value) > max) valueEl.value = String(max);
             });
+            valueEl.addEventListener('input', () => valueEl.classList.remove('invalid'));
+            valueEl.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); timeoutPop.querySelector('.tp-set').click(); } });
             const r = btn.getBoundingClientRect();
             timeoutPop.style.left = Math.min(window.innerWidth - timeoutPop.offsetWidth - 6, Math.max(6, r.right - timeoutPop.offsetWidth)) + 'px';
             timeoutPop.style.top = Math.min(window.innerHeight - timeoutPop.offsetHeight - 6, r.bottom + 6) + 'px';
@@ -3691,7 +3749,12 @@
                 if(e.target.closest('[data-stream]')){ doVkStreamTimeout(row, btn).catch(err => { console.error('mod error', err); status(row, 'error', true); flash(btn,'ошибка '+err.message); }); closeTimeoutMenu(); return; }
                 if(e.target.closest('.tp-set')){
                     const unit = unitEl.value;
-                    const value = valueEl.value;
+                    const value = Number(valueEl.value);
+                    if(!Number.isInteger(value) || value < 1 || value > maxDurationValue(unit)){
+                        valueEl.classList.add('invalid');
+                        valueEl.focus();
+                        return;
+                    }
                     doTimeout(row, durationToMinutes(value, unit), btn).catch(err => { console.error('mod error', err); status(row, 'error', true); flash(btn,'ошибка '+err.message); });
                     closeTimeoutMenu();
                 }

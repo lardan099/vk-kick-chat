@@ -1,6 +1,6 @@
 {
-  "version": "6.44",
-  "notes": "VK снова читается в скрытом режиме; новый вид ленты и окон истории",
+  "version": "6.45",
+  "notes": "Свой срок тайм-аута работает; цвета ников VK как на сайте",
   "files": [
     {
       "path": "background.js",
@@ -9,8 +9,8 @@
     },
     {
       "path": "chat.js",
-      "sha256": "264bf195371079f2969f7728cfbb5fd833e8c22308c1ca46592a0cff35f5bdbf",
-      "size": 285995
+      "sha256": "be710d37784cac6e41a92523e8069462093a6bcd4fd551e080803ab27cf18ccc",
+      "size": 291220
     },
     {
       "path": "config.js",
@@ -49,7 +49,7 @@
     },
     {
       "path": "manifest.json",
-      "sha256": "7a26fd76cb786dfc89b924185480b5d59232df29d3de9a0df7d42be549b592a4",
+      "sha256": "248558ddc395ae9804874ddb76a8c4b6714e0da43f45695bb7bf54437b239924",
       "size": 2112
     },
     {
