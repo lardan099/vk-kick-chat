@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Merged Chat (Kick + VK Play Live)",
   "short_name": "Merged Chat",
-  "version": "6.43",
+  "version": "6.44",
   "description": "Единая лента чатов Kick и VK Play Live. Нужные вкладки держит в фоне сам, обновляется в один клик.",
   "minimum_chrome_version": "116",
   "icons": {
@@ -47,7 +47,8 @@
         "https://live.vkvideo.ru/*/only-chat*",
         "https://live.vkvideo.ru/*/stream/*only-chat*",
         "https://live.vkvideo.ru/*/studio*",
-        "https://live.vkvideo.ru/robots.txt*"
+        "https://live.vkvideo.ru/robots.txt*",
+        "https://live.vkvideo.ru/app/embed/*"
       ],
       "js": [
         "page-hook.js"
@@ -63,7 +64,8 @@
         "https://live.vkvideo.ru/*/only-chat*",
         "https://live.vkvideo.ru/*/stream/*only-chat*",
         "https://live.vkvideo.ru/*/studio*",
-        "https://live.vkvideo.ru/robots.txt*"
+        "https://live.vkvideo.ru/robots.txt*",
+        "https://live.vkvideo.ru/app/embed/*"
       ],
       "js": [
         "gm-shim.js",

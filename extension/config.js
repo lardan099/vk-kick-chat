@@ -13,11 +13,16 @@ export const CONFIG = {
         vk: {
             label: 'VK чат',
             url: 'https://live.vkvideo.ru/grpzdc/stream/default/only-chat',
-            // скрытый читатель VK: самая лёгкая страница с адреса VK (честный Origin для сокета),
-            // без приложения VK, редиректов и логина; #mc-direct включает в ней прямое чтение
-            readerUrl: 'https://live.vkvideo.ru/robots.txt#mc-direct',
+            // скрытый читатель VK: страница с адреса VK (честный Origin для сокета), где приложение VK
+            // сразу останавливается; #mc-direct включает в ней прямое чтение. Плеер-виджет VK сам
+            // разрешает встраивание, robots.txt — запасной (там запрет встраивания снимает правило DNR).
+            // Не поднялся один адрес — воркер переключается на следующий и запоминает рабочий.
+            readerUrls: [
+                'https://live.vkvideo.ru/app/embed/grpzdc#mc-direct',
+                'https://live.vkvideo.ru/robots.txt#mc-direct'
+            ],
             // сборщик VK работает и на only-chat, и в студии — своя вкладка не нужна, если есть любая
-            match: '^https://live\\.vkvideo\\.ru/([^?#]*(only-chat|/studio)|robots\\.txt)',
+            match: '^https://live\\.vkvideo\\.ru/([^?#]*(only-chat|/studio)|robots\\.txt|app/embed/)',
             heartbeatKey: 'mc_collector_vk_heartbeat',
             probeKey: 'mc_collector_probe',
             why: 'сообщения VK (в скрытом режиме — напрямую, без страницы)'

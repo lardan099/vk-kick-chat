@@ -88,7 +88,7 @@ async function openHelper(name, s, settings) {
     const url = CONFIG.helpers[name].url;
     s.touched[name] = Date.now();
     if (settings.placement === 'hidden') {
-        await frames({ type: 'add', name, url: frameUrl(name) });
+        await frames({ type: 'add', name, url: await frameUrl(name) });
         return { kind: 'frame', owned: true };
     }
     let tab = null;
@@ -156,7 +156,19 @@ async function dropUnneeded(s, settings, frameList) {
 
 // В скрытом режиме фрейм VK — не страница VK, а лёгкий читатель: gm-shim видит #mc-direct,
 // глушит приложение VK и сам держит сокет pubsub (Origin у фрейма родной, live.vkvideo.ru)
-const frameUrl = name => CONFIG.helpers[name].readerUrl || CONFIG.helpers[name].url;
+const readerUrls = name => CONFIG.helpers[name].readerUrls || [CONFIG.helpers[name].url];
+// последний адрес, на котором читатель поднялся, иначе первый из списка
+async function frameUrl(name) {
+    const list = readerUrls(name);
+    if (list.length < 2) return list[0];
+    const ok = ((await chrome.storage.local.get('ext_reader_ok')).ext_reader_ok || {})[name];
+    return list.includes(ok) ? ok : list[0];
+}
+async function rememberReader(name, url) {
+    const all = (await chrome.storage.local.get('ext_reader_ok')).ext_reader_ok || {};
+    if (all[name] !== url) await chrome.storage.local.set({ ext_reader_ok: { ...all, [name]: url } });
+}
+const shortUrl = url => String(url || '').replace(/^https:\/\/[^/]+\//, '').replace(/#.*/, '');
 
 async function ensureHelper(name, { forceReload = false } = {}) {
     const settings = await loadSettings();
@@ -230,22 +242,35 @@ async function watchdog() {
         const touched = s.touched[name] || 0;
         st.hb = hb;
         // VK-читатель: кроме heartbeat смотрим, поднялся ли его сокет, и пишем, на каком шаге он застрял
-        let vkSocketDown = false;
+        let vkSocketDown = false, vkOpen = false;
         if (name === 'vk' && found.kind === 'frame') {
             const d = (await chrome.storage.local.get('ext_vk_direct')).ext_vk_direct;
             const fr = frameList.vk || {};
+            const since = Math.max(touched, fr.createdAt || 0);
             // load у фрейма не приходит (читатель сам останавливает загрузку), поэтому ждём его собственный сигнал
-            if (!d || d.t < Math.max(touched, fr.createdAt || 0) - 1000) {
-                st.detail = Date.now() - (fr.createdAt || touched) > 15000 ? 'читатель VK не ответил' : 'загружается';
+            if (!d || d.t < since - 1000) {
+                const list = readerUrls(name);
+                // пришёл load, а читатель молчит — во фрейме страница ошибки (VK не дал встроить адрес)
+                const dead = Date.now() - since > (fr.loadedAt ? 12000 : 20000);
+                if (dead && list.length > 1 && reloadsLeft(name, s) > 0) {
+                    const next = list[(list.indexOf(fr.url) + 1) % list.length];
+                    s.reloads[name] = [...(s.reloads[name] || []), Date.now()];
+                    s.touched[name] = Date.now();
+                    await frames({ type: 'add', name, url: next });
+                    st.state = 'starting';
+                    st.detail = `читатель VK не поднялся на ${shortUrl(fr.url)}, пробую ${shortUrl(next)}`;
+                    continue;
+                }
+                st.detail = dead ? `читатель VK не ответил (${shortUrl(fr.url)})` : 'загружается';
             }
-            else if (d.state === 'open') st.detail = '';
+            else if (d.state === 'open') { st.detail = ''; vkOpen = true; if (fr.url) await rememberReader(name, fr.url); }
             else {
                 st.detail = d.state === 'error' ? 'сокет VK: ' + (d.error || 'ошибка')
                     : d.state === 'closed' ? 'сокет VK закрылся, переподключаюсь' : 'подключаюсь к сокету VK';
                 vkSocketDown = Date.now() - d.t > 90000; // дольше полутора минут без сокета — перезапуск
             }
         }
-        if (Date.now() - touched < GRACE_MS) { st.state = 'starting'; continue; }
+        if (Date.now() - touched < GRACE_MS && !vkOpen) { st.state = 'starting'; continue; }
         // после перезагрузки сборщик так и не ожил (страница ошибки, вход, капча)
         const neverBooted = (hb < touched && Date.now() - touched > BOOT_MS) || vkSocketDown;
         const stale = Date.now() - hb > STALE_MS;
@@ -573,6 +598,15 @@ chrome.tabs.onRemoved.addListener(async tabId => {
 chrome.windows.onRemoved.addListener(async windowId => {
     const s = await session();
     if (s.windowId === windowId) { s.windowId = null; await saveSession(s); }
+});
+
+// читатель VK сменил состояние — сразу обновляем статус, не дожидаясь сторожа
+let vkStateTimer = null;
+chrome.storage.onChanged.addListener((changes, area) => {
+    const ch = area === 'local' && changes.ext_vk_direct;
+    if (!ch || (ch.oldValue && ch.newValue && ch.oldValue.state === ch.newValue.state)) return;
+    clearTimeout(vkStateTimer);
+    vkStateTimer = setTimeout(() => serial(watchdog), 1500);
 });
 
 chrome.runtime.onMessage.addListener((msg, sender, reply) => {

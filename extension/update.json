@@ -1,21 +1,21 @@
 {
-  "version": "6.43",
-  "notes": "Первая версия расширения",
+  "version": "6.44",
+  "notes": "VK снова читается в скрытом режиме; новый вид ленты и окон истории",
   "files": [
     {
       "path": "background.js",
-      "sha256": "945c918f01fa5ebebbd6cfe5db07f05bc5b0d6a792fd4b99c008545e010888e7",
-      "size": 31386
+      "sha256": "7f025a113fae80db1667a8b4637d79be5189a483bec586e5476ee4bb5836aee8",
+      "size": 32960
     },
     {
       "path": "chat.js",
-      "sha256": "88b511d5630bc4d60b4fb70761c3e83d908f69675a33f14251e1578d0a0086a3",
-      "size": 282127
+      "sha256": "264bf195371079f2969f7728cfbb5fd833e8c22308c1ca46592a0cff35f5bdbf",
+      "size": 285995
     },
     {
       "path": "config.js",
-      "sha256": "c75f6e15d32f1ad68653134028d15a4f78ad327850682253fe9220c819ed49b6",
-      "size": 4108
+      "sha256": "0a7b35a5ce8ba7d2464a0b3cb7cfca60ad901c5296b88deeeab2a48de20148c8",
+      "size": 4572
     },
     {
       "path": "ext-ui.js",
@@ -24,8 +24,8 @@
     },
     {
       "path": "gm-shim.js",
-      "sha256": "3ff04dcf3023cfeef6ab81d8c21e86d4a8afdcc8df3d9bbc8dcb97e8bfee0c6e",
-      "size": 18626
+      "sha256": "a019d90489c10ebd5d1608e6f08dda044ec83c71d032bee9dcf925753d733760",
+      "size": 18842
     },
     {
       "path": "icons/128.png",
@@ -49,8 +49,8 @@
     },
     {
       "path": "manifest.json",
-      "sha256": "9f490c740f3d8c0487b2dcf6fcb6a92aa2f9e53f34fa450109b3560bde9909f5",
-      "size": 2018
+      "sha256": "7a26fd76cb786dfc89b924185480b5d59232df29d3de9a0df7d42be549b592a4",
+      "size": 2112
     },
     {
       "path": "offscreen.html",
@@ -59,13 +59,13 @@
     },
     {
       "path": "offscreen.js",
-      "sha256": "e86d36dd48606eb0dda67e3130c8553c3321602b4207b524d6c5a2b56b7ba062",
-      "size": 1658
+      "sha256": "3c7926c5e89951a49910e7d7b77d2331d2405398d50e8d62bb5aa09ad079f3f0",
+      "size": 1969
     },
     {
       "path": "page-hook.js",
-      "sha256": "d2fe4d7b4ba9619e3774398c067a842a930f7be41e31881b1eec43e0669e1ca5",
-      "size": 5609
+      "sha256": "1b7e5b632b0439564717a858606d39b6f111fcc93f154717a22dd9969e3ef67a",
+      "size": 5874
     },
     {
       "path": "popup.html",

@@ -6,6 +6,8 @@
     window.__mcExtHook = true;
     // На странице-виджете свой код страницы не работает (gm-shim останавливает загрузку)
     if (location.hostname === 'kick.com' && location.hash.includes('feed')) return;
+    // плеер-виджет VK — только адрес для читателя (там всё делает gm-shim), сайт мы там не слушаем
+    if (location.pathname.startsWith('/app/embed/') || location.hash.includes('mc-direct')) return;
     // Во фреймах работаем только внутри скрытого документа расширения, не в iframe самого сайта
     if (window !== window.top) {
         const anc = location.ancestorOrigins;

@@ -10,7 +10,11 @@ function add(name, url) {
     el.allow = 'autoplay; clipboard-read; clipboard-write';
     el.style.cssText = 'width:1280px;height:900px;border:0';
     f = { el, url, createdAt: Date.now(), loadedAt: 0 };
-    el.addEventListener('load', () => { f.loadedAt = Date.now(); });
+    el.addEventListener('load', () => {
+        f.loadedAt = Date.now();
+        // читатель VK сам гасит load; пришёл load — во фрейме, скорее всего, страница ошибки: пусть сторож проверит
+        setTimeout(() => chrome.runtime.sendMessage({ type: 'helpers:status' }).catch(() => { }), 13000);
+    });
     el.src = url;
     document.body.appendChild(el);
     frames.set(name, f);

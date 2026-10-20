@@ -18,6 +18,11 @@
     const IS_FEED = location.hostname === 'kick.com' && location.hash.includes('feed') && window === window.top;
     // Скрытый фрейм-читатель VK: страница с адреса VK (честный Origin для сокета), но без приложения VK
     const IS_VK_DIRECT = location.hostname === 'live.vkvideo.ru' && location.hash.includes('mc-direct') && window !== window.top;
+    // плеер-виджет VK нужен только как адрес для читателя; открытый сам по себе, он не сборщик
+    if (!IS_VK_DIRECT && location.pathname.startsWith('/app/embed/')) {
+        globalThis.MC_EXT = { skip: true, isFeed: false, ready: Promise.resolve() };
+        return;
+    }
     // Виджет и читатель рисуют/делают всё сами — останавливаем загрузку сайта, пока его скрипты не скачались
     if (IS_FEED || IS_VK_DIRECT) { try { window.stop(); } catch (e) { } }
     // диагностика: фрейм-читатель VK ожил (воркер покажет, на каком шаге он застрял, если дальше не пойдёт)
@@ -267,6 +272,8 @@
             start() {
                 if (started) return;
                 started = true;
+                // читатель в скрытом документе один: замок от прошлой (перезагруженной) копии не ждём
+                claim();
                 connect();
                 // держим «замок» и подхватываем сокет, если окно-владелец закрылось
                 setInterval(() => {

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Merged Chat (Kick + VK Play Live)
 // @namespace    grpzdc.mergedchat
-// @version      6.43
+// @version      6.44
 // @description  Перехватывает WebSocket реальных чатов Kick и VK Play Live, собирает все сообщения и рисует единую ленту своим дизайном. Сохраняет весь функционал родных чатов (авторизация, бан и т.д.).
 // @match        https://kick.com/popout/*/chat*
 // @match        https://dashboard.kick.com/*
@@ -1273,6 +1273,35 @@
                 .send-choice.open,.template-menu.open,#emote-picker.open,#mention-suggest.open,.nick-menu,.timeout-pop,#settings-panel.open,button.done{animation:none}
                 #settings-toggle .gear{transition:none}
             }
+            /* ---- Лента: ровные строки, время по наведению, спокойные состояния во всех темах ---- */
+            #chat{padding:8px 6px 10px}
+            #chat::-webkit-scrollbar{width:6px}
+            #chat::-webkit-scrollbar-thumb{background:transparent;border-radius:6px}
+            #chat:hover::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--text) 22%,transparent)}
+            .msg{padding:3px 8px;border-radius:6px;transition:background-color .12s ease;animation:mc-msg-in .16s ease-out}
+            .msg+.msg{margin-top:1px}
+            .msg:hover{background:color-mix(in srgb,var(--text) 6%,transparent)}
+            @keyframes mc-msg-in{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+            .plat{width:16px;height:16px;border-radius:4px;margin-right:5px;vertical-align:-3px}
+            .badge.img{border-radius:3px}
+            .name{margin-right:3px}
+            .msg .ts{float:right;margin:1px 0 0 8px;font-size:11px;line-height:1.6;color:var(--muted);font-variant-numeric:tabular-nums;
+                opacity:0;transition:opacity .12s ease;user-select:none}
+            .msg:hover .ts,.thread-msg .ts{opacity:1}
+            .reply,html[data-theme="light"] .reply{margin-left:21px;border-left:2px solid var(--accent-strong);color:var(--muted)}
+            .reply-label,.reply-text,html[data-theme="light"] .reply-label,html[data-theme="light"] .reply-text{color:inherit}
+            .reply[data-parent-id]:hover,html[data-theme="light"] .reply[data-parent-id]:hover{border-left-color:var(--accent);color:var(--text);background:transparent}
+            .msg.reply-target{outline:0;background:var(--accent-medium);box-shadow:inset 3px 0 0 var(--accent)}
+            .msg.reply-to-me,.msg.reply-to-me:hover{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+            .msg.awaiting{background:color-mix(in srgb,#f0a400 14%,transparent);box-shadow:inset 3px 0 0 #f0a400}
+            .msg.mod-event{opacity:1;border-left:0;font-size:calc(var(--fs) - 1px);color:var(--muted);
+                background:color-mix(in srgb,#f0a400 9%,transparent);box-shadow:inset 3px 0 0 #f0a400}
+            .msg.removed{opacity:1;text-decoration:none}.msg.removed .text{opacity:.45;text-decoration:line-through}
+            #stale-banner{background:var(--accent);color:var(--accent-contrast);letter-spacing:0;font-weight:600;padding:6px 14px;border-radius:999px;
+                box-shadow:0 6px 18px color-mix(in srgb,var(--text) 22%,transparent);transition:background-color .14s ease,transform .1s ease}
+            #stale-banner:hover{background:var(--accent-bright)}
+            #stale-banner:active{transform:translateX(-50%) scale(.97)}
+            @media (prefers-reduced-motion:reduce){.msg{animation:none}}
             /* Выделение сообщений человека: тонировка поверх фона любой темы (inset-слой не трогает background) */
             .msg.highlighted:not(.awaiting):not(.reply-to-me){box-shadow:inset 3px 0 0 var(--mc-hl,#ffd700),inset 0 0 0 999px color-mix(in srgb,var(--mc-hl,#ffd700) 26%,transparent)!important}
         `;
@@ -1332,7 +1361,7 @@
                 <button id="links-btn" class="links-btn" title="Показать все ссылки из текущего буфера">Получить все ссылки</button>
             </div>
             <div id="chat"></div>
-            <div id="stale-wrap"><div id="stale-banner" title="Кликни, чтобы промотать вниз">ЧАТ НЕ АКТУАЛЕН, ПРОКРУТИ ⬇</div></div>
+            <div id="stale-wrap"><div id="stale-banner" title="Лента остановлена, пока ты листаешь вверх">↓ К новым сообщениям</div></div>
             <div id="composer">
                 <div id="reply-compose"><span id="reply-compose-text"></span><button id="reply-cancel" title="Отменить ответ">×</button></div>
                 <div class="compose-row">
@@ -2153,7 +2182,9 @@
                     oldest.forEach(([key]) => chatUsers.delete(key));
                 }
             }
-            div.innerHTML = reply +
+            const sentAt = new Date(Number(div.dataset.sentAt));
+            const timeHtml = isNaN(sentAt) ? '' : `<span class="ts" title="${esc(sentAt.toLocaleString('ru-RU'))}">${esc(sentAt.toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' }))}</span>`;
+            div.innerHTML = timeHtml + reply +
                 `<span class="plat ${msg.platform}"><img src="${esc(msg.platform==='kick' ? KICK_ICON_URL : VK_ICON_URL)}" alt="${msg.platform==='kick'?'Kick':'VK'}"></span>` +
                 badges +
                 `<span class="name" data-name="${esc(msg.name)}" data-plat="${msg.platform}" data-userid="${esc(msg.userId || '')}" style="${nickColorStyle(color)};cursor:pointer" title="Действия с ${esc(msg.name)}">${esc(displayName(msg.platform, msg.name, msg.userId || ''))}</span>` +
@@ -2167,11 +2198,176 @@
             chat.appendChild(div);
 
             // история
-            history.push({ platform: msg.platform, name: msg.name, color, html: body, reply: reply });
+            history.push({ platform: msg.platform, name: msg.name, color, html: body, reply: reply, ts: Number(div.dataset.sentAt) || Date.now() });
             while(history.length>HIST_CAP) history.shift();
 
             while(chat.children.length>MAX) chat.removeChild(chat.firstChild);
             scroll();
+        }
+
+        // --- Окна истории, модерации и ссылок: та же тема и палитра, что у ленты ---
+        const HIST_THEME_VARS = ['--bg','--panel','--border','--text','--muted','--surface-0','--surface-1','--surface-2','--surface-3','--surface-4',
+            '--accent','--accent-soft','--accent-medium','--accent-strong','--accent-bright','--accent-dark','--accent-contrast'];
+        const HIST_ICONS = {
+            trash:'<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>',
+            clock:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+            ban:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M6 6l12 12"/></svg>',
+            undo:'<svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>'
+        };
+        const HIST_CSS = `
+            *{box-sizing:border-box}
+            html{--danger:#c62f3b}
+            html[data-theme="dark"]{--danger:#ff6b76}
+            body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 Inter,system-ui,"Segoe UI",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+            [hidden]{display:none!important}
+            .hd{position:sticky;top:0;z-index:2;padding:14px 16px 12px;background:var(--panel);border-bottom:1px solid var(--border);
+                box-shadow:0 6px 18px color-mix(in srgb,var(--text) 8%,transparent)}
+            .hd-top{display:flex;align-items:center;gap:11px;min-width:0}
+            .hp{width:30px;height:30px;border-radius:8px;flex:0 0 auto;object-fit:cover}
+            .hp.kick{background:#53fc18}
+            .hp.vk{object-fit:contain;border-radius:0}
+            .hwho{min-width:0}
+            .hn{font-size:17px;font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+            html[data-theme="light"] .hn,html[data-theme="aero"] .hn{color:var(--nick-light-color)!important}
+            .hm{font-size:12px;color:var(--muted);margin-top:2px;font-variant-numeric:tabular-nums}
+            .badge{vertical-align:middle;margin-right:5px}.badge.img{height:1.05em;width:1.05em;border-radius:3px}
+            button{font:inherit;font-size:13px;font-weight:600;color:var(--text);cursor:pointer;
+                transition:background-color .14s ease,border-color .14s ease,color .14s ease,opacity .14s ease,transform .1s cubic-bezier(.2,.8,.2,1)}
+            button svg{width:15px;height:15px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+            button:active{transform:translateY(1px) scale(.97)}
+            button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+            button:disabled{opacity:.5;cursor:default;transform:none}
+            .hist-actions{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:12px}
+            .seg{display:inline-flex;align-items:stretch;height:30px;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface-1)}
+            .seg-l{display:inline-flex;align-items:center;gap:6px;padding:0 10px;font-size:12px;color:var(--muted);border-right:1px solid var(--border)}
+            .seg-l svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+            .seg button{border:0;border-right:1px solid var(--border);border-radius:0;background:transparent;padding:0 10px;min-width:36px}
+            .seg button:last-child{border-right:0}
+            .seg button:hover{background:var(--accent-soft)}
+            .seg button:active{transform:none;background:var(--accent-medium)}
+            .sp{flex:1}
+            .hist-actions>button,#more{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:30px;padding:0 11px;
+                border:1px solid var(--border);border-radius:8px;background:var(--surface-1)}
+            .hist-actions>button:hover,#more:hover{background:var(--surface-3)}
+            .hist-actions .danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 45%,var(--border))}
+            .hist-actions .danger:hover,.hist-actions .danger.armed{background:var(--danger);border-color:var(--danger);color:#fff}
+            #notice{margin-top:10px;padding:7px 10px;border-radius:8px;font-size:12.5px;border:1px solid var(--accent-medium);background:var(--accent-soft);
+                animation:hist-in .18s ease-out}
+            #notice.bad{border-color:color-mix(in srgb,var(--danger) 40%,transparent);background:color-mix(in srgb,var(--danger) 12%,transparent)}
+            .wrap{padding:6px 8px 4px;max-width:860px;margin:0 auto}
+            .day{display:flex;align-items:center;gap:10px;margin:14px 8px 6px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+            .day::after{content:'';flex:1;height:1px;background:var(--border);opacity:.6}
+            .hr{display:grid;grid-template-columns:42px minmax(0,1fr) auto;gap:10px;align-items:start;padding:5px 8px;border-radius:8px;
+                transition:background-color .12s ease;animation:hist-in .16s ease-out both}
+            .hr:hover{background:color-mix(in srgb,var(--text) 5%,transparent)}
+            .htime{font-size:12px;line-height:20px;color:var(--muted);font-variant-numeric:tabular-nums}
+            .hbody{min-width:0;overflow-wrap:anywhere;line-height:20px}
+            .ht{white-space:pre-wrap}
+            .hrow-mod{display:inline-flex;align-items:center;gap:6px;min-height:20px;opacity:0;transition:opacity .12s ease}
+            .hr:hover .hrow-mod,.hrow-mod:focus-within,.hrow-mod.show{opacity:1}
+            .hrow-mod button{width:28px;height:24px;display:grid;place-items:center;padding:0;border:1px solid transparent;border-radius:6px;background:transparent;color:var(--muted)}
+            .hrow-mod button:hover{color:var(--danger);background:color-mix(in srgb,var(--danger) 12%,transparent);border-color:color-mix(in srgb,var(--danger) 35%,transparent)}
+            .hstatus{font-size:12px;color:var(--accent);white-space:nowrap}.hstatus.bad{color:var(--danger)}
+            .hr.removed .hbody{opacity:.45;text-decoration:line-through}
+            .reply{display:block;margin:0 0 2px;padding-left:8px;border-left:2px solid var(--accent-strong);color:var(--muted);font-size:12.5px;line-height:1.35;
+                white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+            .reply-label,.reply-text{color:inherit}.reply-name{font-weight:700;color:var(--text)}
+            .empty{padding:44px 12px;text-align:center;color:var(--muted)}
+            img.emote{vertical-align:-.25em;height:1.35em;max-width:1.55em;width:auto;object-fit:contain;margin:-.12em .08em}
+            a{color:#3a8bfd;text-decoration:none}a:hover{text-decoration:underline}
+            #more{display:flex;margin:10px auto 22px}
+            .link-row{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;align-items:start;padding:7px 8px;border-radius:8px}
+            .link-row:hover{background:color-mix(in srgb,var(--text) 5%,transparent)}
+            .link-row img{width:16px;height:16px;border-radius:4px;margin-top:2px}
+            .link-row .nick{font-weight:700;margin-right:6px}
+            html[data-theme="light"] .link-row .nick,html[data-theme="aero"] .link-row .nick{color:var(--nick-light-color)!important}
+            .link-row a{word-break:break-all}
+            ::-webkit-scrollbar{width:10px}::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--text) 18%,transparent);border-radius:10px;border:3px solid var(--bg)}
+            @keyframes hist-in{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+            @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}`;
+        function histPage(title, head, body, foot=''){
+            const cs = getComputedStyle(document.documentElement);
+            const vars = HIST_THEME_VARS.map(v => [v, cs.getPropertyValue(v).trim()]).filter(([, val]) => val && !/[<>{};]/.test(val));
+            const root = document.documentElement.dataset;
+            return `<!DOCTYPE html><html lang="ru" data-theme="${esc(root.theme || 'dark')}" data-color-scheme="${esc(root.colorScheme || '')}"><head><meta charset="UTF-8">`
+                + `<title>${esc(title)}</title><style>:root{${vars.map(([k, val]) => `${k}:${val}`).join(';')}}${HIST_CSS}</style></head>`
+                + `<body>${head}<main id="wrap" class="wrap">${body}</main>${foot}</body></html>`;
+        }
+        function histHead({ name, color, platform, meta, actions='' }){
+            const icon = platform === 'kick' ? KICK_ICON_URL : platform === 'vk' ? VK_ICON_URL : '';
+            return `<header class="hd"><div class="hd-top">${icon ? `<img class="hp ${esc(platform)}" src="${esc(icon)}" alt="">` : ''}`
+                + `<div class="hwho"><div class="hn" style="${color ? nickColorStyle(color) : ''}">${esc(name)}</div><div id="meta" class="hm">${esc(meta)}</div></div></div>`
+                + `${actions}<div id="notice" role="status" hidden></div></header>`;
+        }
+        function histActions(presets, unbanAct){
+            const buttons = presets.map(([min, label]) => `<button data-uact="${min === 'stream' ? 'stream-timeout' : 'timeout'}" data-min="${esc(min)}">${esc(label)}</button>`).join('');
+            return `<div class="hist-actions"><div class="seg" role="group" aria-label="Тайм-аут"><span class="seg-l">${HIST_ICONS.clock}Тайм-аут</span>${buttons}`
+                + `<button data-uact="timeout" data-min="custom" title="Свой срок">…</button></div><span class="sp"></span>`
+                + `<button data-uact="${unbanAct}" title="Снять бан и тайм-аут">${HIST_ICONS.undo}Снять</button>`
+                + `<button class="danger" data-uact="ban" title="Забанить навсегда (нажать два раза)">${HIST_ICONS.ban}<span>Бан</span></button></div>`;
+        }
+        function histTime(raw){
+            let d = null;
+            if(raw !== undefined && raw !== null && raw !== ''){
+                const n = Number(raw);
+                d = Number.isFinite(n) && n > 0 ? new Date(n < 1e12 ? n * 1000 : n) : new Date(raw);
+            }
+            if(!d || isNaN(d)) return { day:'', time:'', full:'' };
+            return { day:d.toDateString(), time:d.toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' }), full:d.toLocaleString('ru-RU') };
+        }
+        function histRow({ id='', when='', reply='', html='', removed=false }){
+            const t = histTime(when);
+            return `<div class="hr${removed ? ' removed' : ''}" data-mid="${esc(id)}" data-day="${esc(t.day)}">`
+                + `<time class="htime" title="${esc(t.full)}">${esc(t.time || '—')}</time>`
+                + `<div class="hbody">${reply}<span class="ht">${html}</span></div>`
+                + `<span class="hrow-mod"><span class="hstatus" hidden></span>${id ? `<button data-hact="delete" title="Удалить сообщение" aria-label="Удалить сообщение">${HIST_ICONS.trash}</button>` : ''}</span></div>`;
+        }
+        // разделители дней между сообщениями (пересчитываются после каждой подгрузки)
+        function histMarkDays(wrap){
+            wrap.querySelectorAll(':scope > .day').forEach(el => el.remove());
+            const today = new Date(), yesterday = new Date(Date.now() - 86400000);
+            let last = null;
+            wrap.querySelectorAll(':scope > .hr').forEach(row => {
+                const day = row.dataset.day;
+                if(!day || day === last) return;
+                last = day;
+                const d = new Date(day);
+                const label = day === today.toDateString() ? 'Сегодня' : day === yesterday.toDateString() ? 'Вчера'
+                    : d.toLocaleDateString('ru-RU', d.getFullYear() === today.getFullYear() ? { day:'numeric', month:'long' } : { day:'numeric', month:'long', year:'numeric' });
+                row.insertAdjacentHTML('beforebegin', `<div class="day">${esc(label)}</div>`);
+            });
+        }
+        function histNotice(w, text, bad=false){
+            const el = w.document.getElementById('notice');
+            if(!el) return;
+            el.textContent = text;
+            el.classList.toggle('bad', bad);
+            el.hidden = false;
+            el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
+        }
+        function histRowStatus(row, text, bad=false){
+            const el = row.querySelector('.hstatus');
+            if(!el) return;
+            el.textContent = text;
+            el.hidden = false;
+            el.classList.toggle('bad', bad);
+            row.querySelector('.hrow-mod')?.classList.add('show');
+        }
+        // «Бан» срабатывает со второго нажатия: первое только взводит кнопку на 3 секунды
+        function histArmed(btn){
+            if(btn.dataset.uact !== 'ban' || btn.classList.contains('armed')) return true;
+            const label = btn.querySelector('span');
+            btn.classList.add('armed');
+            if(label) label.textContent = 'Точно бан?';
+            clearTimeout(btn._disarm);
+            btn._disarm = setTimeout(() => histDisarm(btn), 3000);
+            return false;
+        }
+        function histDisarm(btn){
+            clearTimeout(btn._disarm);
+            btn.classList.remove('armed');
+            const label = btn.querySelector('span');
+            if(btn.dataset.uact === 'ban' && label) label.textContent = 'Бан';
         }
 
         // --- ИСТОРИЯ по клику на ник ---
@@ -2187,21 +2383,9 @@
                     rows.push({ href, name:item.name, platform:item.platform, color:item.color || '#fff' });
                 });
             });
-            const body = rows.map(r => `<div class="link-row"><span class="src">${esc(r.platform)}</span> <span class="nick" style="color:${esc(r.color)}">${esc(r.name)}</span>: <a href="${esc(r.href)}" target="_blank" rel="noopener">${esc(r.href)}</a></div>`).join('')
-                || '<div class="empty">ссылок в текущем буфере нет</div>';
-            const page = `<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Ссылки чата</title>
-                <style>
-                body{background:#121212;color:#eee;font-family:'Inter',system-ui,Arial,sans-serif;margin:0}
-                .hd{position:sticky;top:0;background:#1f1f23;padding:14px 18px;border-bottom:1px solid #333}
-                .ttl{font-size:18px;font-weight:700}.meta{font-size:12px;color:#888;margin-top:3px}
-                .wrap{padding:14px 18px;max-width:900px;margin:0 auto}
-                .link-row{padding:7px 0;border-bottom:1px solid #242424;line-height:1.4;word-break:break-word}
-                .src{display:inline-block;min-width:34px;color:#888}.nick{font-weight:700}
-                a{color:#3a8bfd;text-decoration:none}.empty{color:#888}
-                ::-webkit-scrollbar{width:8px}::-webkit-scrollbar-thumb{background:#333;border-radius:4px}
-                </style></head><body>
-                <div class="hd"><div class="ttl">Ссылки чата</div><div class="meta">найдено: ${rows.length}</div></div>
-                <div class="wrap">${body}</div></body></html>`;
+            const body = rows.map(r => `<div class="link-row"><img src="${esc(r.platform === 'kick' ? KICK_ICON_URL : VK_ICON_URL)}" alt="${esc(r.platform)}"><div><span class="nick" style="${nickColorStyle(r.color)}">${esc(r.name)}</span><a href="${esc(r.href)}" target="_blank" rel="noopener">${esc(r.href)}</a></div></div>`).join('')
+                || '<div class="empty">В текущей ленте ссылок нет</div>';
+            const page = histPage('Ссылки чата', histHead({ name:'Ссылки из чата', meta:`найдено: ${rows.length}` }), body);
             const w = window.open('', '_blank', 'width=760,height=720,scrollbars=yes,resizable=yes');
             if(w){ w.document.open(); w.document.write(page); w.document.close(); }
         }
@@ -2244,27 +2428,13 @@
         function openBufferHistory(name, platform){
             const items = history.filter(h => h.name===name && h.platform===platform);
             const color = items.length ? items[items.length-1].color : '#fff';
-            const rows = items.map(h => `<div class="hr">${h.reply}<span class="ht">${h.html}</span></div>`).join('') || '<div class="hr">нет сообщений в буфере</div>';
+            const rows = items.map(h => histRow({ when:h.ts, reply:h.reply, html:h.html })).join('') || '<div class="empty">В ленте нет его сообщений</div>';
             const platLabel = platform==='kick' ? 'Kick' : 'VK Play Live';
-            const page = `<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>История: ${esc(name)}</title>
-                <style>
-                body{background:#121212;color:#eee;font-family:'Inter',system-ui,Arial,sans-serif;margin:0}
-                .hd{position:sticky;top:0;background:#1f1f23;padding:14px 18px;border-bottom:1px solid #333;box-shadow:0 4px 12px rgba(0,0,0,.4)}
-                .hn{font-size:18px;font-weight:700;color:${esc(color)}}
-                .hm{font-size:12px;color:#888;margin-top:3px}
-                .wrap{padding:14px 18px;max-width:760px;margin:0 auto}
-                .hr{padding:7px 0;border-bottom:1px solid #242424;line-height:1.45}
-                .reply{display:block;color:#9a9a9a;font-size:.8em;margin-bottom:2px;border-left:2px solid #555;padding-left:6px}
-                img.emote{vertical-align:-.25em;height:1.35em;max-width:1.55em;width:auto;object-fit:contain;margin:-.12em .08em}
-                a{color:#53a8fc;text-decoration:none}
-                ::-webkit-scrollbar{width:8px}::-webkit-scrollbar-thumb{background:#333;border-radius:4px}
-                </style></head><body>
-                <div class="hd"><div class="hn">${esc(name)}</div><div class="hm">${platLabel} · сообщений в буфере: ${items.length}</div></div>
-                <div class="wrap">${rows}</div>
-                </body></html>`;
+            const page = histPage(`История: ${name}`, histHead({ name, color, platform, meta:`${platLabel} · сообщений в ленте: ${items.length}` }), rows);
             const w = window.open('', '_blank', popupFeatures('mcBufferHistoryWindow', { width:560, height:720, left:80, top:60 }));
             if(w){
                 rememberPopup(w, 'mcBufferHistoryWindow'); w.document.open(); w.document.write(page); w.document.close();
+                histMarkDays(w.document.getElementById('wrap'));
                 // прокрутка снаружи: inline-скрипты в окне могут быть запрещены CSP
                 try { w.scrollTo(0, w.document.body.scrollHeight); } catch(e) { }
             }
@@ -2284,28 +2454,10 @@
             const fallback = last.cursor || last.created_at_timestamp || last.created_at_ts || last.timestamp || last.created_at_ms;
             return fallback !== undefined && fallback !== null && fallback !== '' ? String(fallback) : '';
         }
-        // Кнопки модерации в окнах истории: плавные состояния, «бан» явно красный при наведении,
-        // чтобы не нажать по ошибке
-        const HIST_BTN_CSS = `
-                .hist-actions button,.hrow-mod button,#more{transition:background-color .14s,border-color .14s,color .14s,transform .1s cubic-bezier(.2,.8,.2,1)}
-                .hist-actions button:active,.hrow-mod button:active,#more:active{transform:translateY(1px) scale(.96)}
-                .hist-actions button:focus-visible,.hrow-mod button:focus-visible,#more:focus-visible{outline:2px solid #53fc18;outline-offset:2px}
-                .hist-actions button:hover,.hrow-mod button:hover{border-color:#5a5d61}
-                .hist-actions .danger{color:#ff9aa5;border-color:#5a2328}
-                .hist-actions .danger:hover{background:#7a1d1d;border-color:#a8323a;color:#fff}
-                .hist-actions button:disabled,.hrow-mod button:disabled{opacity:.5;cursor:default;transform:none}
-                @keyframes hb-done{0%{transform:scale(1)}40%{transform:scale(1.06)}100%{transform:scale(1)}}
-                .hstatus{animation:hb-done .25s ease-out}`;
         function kickHistoryRow(m, name){
             const content = m?.content || m?.message || m?.body || m?.text || '';
-            const whenRaw = m?.created_at || m?.sent_at || m?.timestamp || '';
-            let when = '';
-            try { if(whenRaw) when = new Date(whenRaw).toLocaleString(); } catch(e) { when = String(whenRaw); }
-            const id = m?.id || m?.message_id || '';
-            const removed = m?.deleted_at || m?.deleted || m?.is_deleted;
-            return `<div class="hr${removed ? ' removed' : ''}" data-mid="${esc(id)}">`
-                + `<div class="hm">${esc(when || id || name)}${removed ? ' · deleted' : ''}<span class="hrow-mod"><button data-hact="delete" title="Удалить сообщение">🗑</button><span class="hstatus" hidden></span></span></div>`
-                + `<span class="ht">${kickContent(String(content))}</span></div>`;
+            const removed = !!(m?.deleted_at || m?.deleted || m?.is_deleted);
+            return histRow({ id:m?.id || m?.message_id || '', when:m?.created_at || m?.sent_at || m?.timestamp || '', html:kickContent(String(content)), removed });
         }
         async function kickApiJson(url){
             const r = await kickApi('GET', url);
@@ -2317,46 +2469,16 @@
             const w = window.open('', '_blank', popupFeatures('mcKickHistoryWindow', { width:640, height:760, left:90, top:70 }));
             if(!w) return;
             rememberPopup(w, 'mcKickHistoryWindow');
-            const page = `<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Kick история: ${esc(name)}</title>
-                <style>
-                body{background:#121212;color:#eee;font-family:'Inter',system-ui,Arial,sans-serif;margin:0}
-                .hd{position:sticky;top:0;background:#1f1f23;padding:14px 18px;border-bottom:1px solid #333;box-shadow:0 4px 12px rgba(0,0,0,.4);z-index:2}
-                .hn{font-size:18px;font-weight:700;color:#53fc18}
-                .badge{vertical-align:middle;margin-right:5px}
-                .badge.img{height:1.05em;width:1.05em;border-radius:2px}
-                .hm{font-size:12px;color:#888;margin-top:3px}
-                .hist-actions{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
-                .hist-actions button,.hrow-mod button{border:1px solid #444;background:#202225;color:#ddd;border-radius:4px;padding:4px 7px;cursor:pointer;font-weight:700}
-                .hist-actions button:hover,.hrow-mod button:hover{background:#333;color:#fff}
-                .hist-actions .danger,.hrow-mod button:hover{border-color:#7a1d1d}
-                ${HIST_BTN_CSS}
-                .hrow-mod{float:right;display:inline-flex;gap:5px;align-items:center;margin-left:8px}
-                .hstatus{color:#b8ff9e;margin-left:4px}.hstatus.bad{color:#ffb0b8}
-                .wrap{padding:14px 18px;max-width:820px;margin:0 auto}
-                .hr{padding:8px 0;border-bottom:1px solid #242424;line-height:1.45}
-                .hr.removed{opacity:.45;text-decoration:line-through}
-                img.emote{vertical-align:-.25em;height:1.35em;max-width:1.55em;width:auto;object-fit:contain;margin:-.12em .08em}
-                a{color:#53a8fc;text-decoration:none}
-                #more{display:block;margin:14px auto 20px;border:1px solid #444;background:#202225;color:#fff;border-radius:5px;padding:8px 12px;font-weight:700;cursor:pointer}
-                #more:hover{background:#2d3033}
-                ::-webkit-scrollbar{width:8px}::-webkit-scrollbar-thumb{background:#333;border-radius:4px}
-                </style></head><body>
-                <div class="hd"><div class="hn">${esc(name)}</div><div id="meta" class="hm">Kick · загрузка профиля…</div>
-                <div class="hist-actions"><button data-uact="timeout" data-min="5">5м</button><button data-uact="timeout" data-min="60">1ч</button><button data-uact="timeout" data-min="1440">1д</button><button data-uact="timeout" data-min="custom">Тайм-аут…</button><button class="danger" data-uact="ban">Бан</button><button data-uact="unban">Разбан/анмут</button></div></div>
-                <div id="wrap" class="wrap"></div>
-                <button id="more">Ещё</button>
-                </body></html>`;
+            const kickColor = rememberedColor('kick', name, '') || '#53fc18';
+            const page = histPage(`Kick: ${name}`,
+                histHead({ name, color:kickColor, platform:'kick', meta:'Kick · загружаю профиль…',
+                    actions:histActions([['5','5м'],['60','1ч'],['1440','1д']], 'unban') }),
+                '', '<button id="more">Ещё</button>');
             w.document.open(); w.document.write(page); w.document.close();
 
             const wrap = w.document.getElementById('wrap');
             const meta = w.document.getElementById('meta');
             const more = w.document.getElementById('more');
-            const hstatus = (root, text, bad=false) => {
-                const el = root.querySelector('.hstatus') || meta;
-                el.textContent = text;
-                el.hidden = false;
-                el.classList?.toggle('bad', bad);
-            };
             const runKickHistoryAction = async (btn) => {
                 const act = btn.dataset.uact || btn.dataset.hact;
                 const row = btn.closest('.hr');
@@ -2367,31 +2489,31 @@
                         if(!mid) throw new Error('no message id');
                         await kickApi('DELETE', `https://kick.com/api/v2/chatrooms/${encodeURIComponent(KICK_CHATROOM_ID)}/messages/${encodeURIComponent(mid)}`);
                         row.classList.add('removed');
-                        hstatus(row, 'deleted');
+                        histRowStatus(row, 'удалено');
                     } else if(act === 'timeout'){
                         let min = btn.dataset.min;
                         if(min === 'custom') min = prompt('Тайм-аут в минутах, максимум 10080', '90');
                         min = durationToMinutes(min, 'minute');
                         await kickApi('POST', `https://kick.com/api/v2/channels/${KICK_SLUG}/bans`, { duration:min, banned_username:name, permanent:false });
-                        meta.textContent = `Kick · ${name} · timeout ${formatDuration(min)}`;
+                        histNotice(w, `Тайм-аут ${formatDuration(min)} — готово`);
                     } else if(act === 'ban'){
                         await kickApi('POST', `https://kick.com/api/v2/channels/${KICK_SLUG}/bans`, { permanent:true, banned_username:name });
-                        meta.textContent = `Kick · ${name} · banned`;
+                        histNotice(w, `${name} забанен`);
                     } else if(act === 'unban'){
                         await kickApi('DELETE', `https://kick.com/api/v2/channels/${KICK_SLUG}/bans/${encodeURIComponent(name)}`);
-                        meta.textContent = `Kick · ${name} · unbanned/unmuted`;
+                        histNotice(w, 'Бан и тайм-аут сняты');
                     }
                 }catch(err){
                     console.error('history moderation error', err);
-                    if(row) hstatus(row, 'error ' + err.message, true);
-                    else meta.textContent = 'Kick · ошибка: ' + err.message;
+                    if(row) histRowStatus(row, 'ошибка: ' + err.message, true);
+                    else histNotice(w, 'Не вышло: ' + err.message, true);
                 }finally{
                     btn.disabled = false;
                 }
             };
             w.document.addEventListener('click', e => {
                 const btn = e.target.closest('[data-uact],[data-hact]');
-                if(btn) runKickHistoryAction(btn);
+                if(btn && histArmed(btn)) { histDisarm(btn); runKickHistoryAction(btn); }
             });
             let loading = false;
             let done = false;
@@ -2422,19 +2544,21 @@
                     usedCursors.add(cursor);
                     if(!messages.length){
                         done = true;
-                        if(!loaded) wrap.innerHTML = '<div class="hr">История пуста или Kick не отдал сообщения</div>';
+                        if(!loaded) wrap.innerHTML = '<div class="empty">Сообщений нет — или Kick их не отдал</div>';
                     } else {
                         wrap.insertAdjacentHTML('beforeend', messages.map(m => kickHistoryRow(m, name)).join(''));
+                        histMarkDays(wrap);
                         loaded += messages.length;
                         const next = pickNextCursor(data, messages);
                         if(!next || next === cursor) done = true;
                         else cursor = next;
                     }
-                    meta.textContent = `Kick · сообщений загружено: ${loaded}${done ? ' · конец' : ''}`;
+                    meta.textContent = `Kick · сообщений: ${loaded}${done ? ' · это все' : ''}`;
                     more.hidden = done;
                 }catch(err){
                     console.error('history error', err);
-                    meta.textContent = 'Kick · ошибка: ' + err.message;
+                    meta.textContent = 'Kick';
+                    histNotice(w, 'История не загрузилась: ' + err.message, true);
                     more.textContent = 'Повторить';
                 }finally{
                     loading = false;
@@ -2451,66 +2575,33 @@
             const msg = (m?.type === 'message' && m?.data && typeof m.data === 'object') ? m.data : (m?.message && typeof m.message === 'object' ? m.message : m);
             const content = msg?.content ?? msg?.text ?? msg?.body ?? msg?.data ?? msg?.payload?.data ?? msg?.message?.data ?? msg?.message ?? '';
             const id = msg?.id || msg?.message_id || msg?.chatMessageId || m?.id || '';
-            const whenRaw = msg?.created_at || msg?.createdAt || msg?.createTime || msg?.timestamp || '';
-            let when = '';
-            try { if(whenRaw) when = Number(whenRaw) > 1000000000 ? new Date(Number(whenRaw) * 1000).toLocaleString() : new Date(whenRaw).toLocaleString(); } catch(e) { when = String(whenRaw); }
             const html = vkContent(asVkParts(content));
             const parent = msg?.parentMessage || msg?.parent || msg?.replyMessage || msg?.reply || null;
             let reply = '';
             if(parent && typeof parent === 'object'){
                 const pu = parent.user || parent.author || {};
                 const pname = pu.displayName || pu.nick || pu.name || parent.displayName || parent.nick || parent.name || '';
-                const pcontent = parent.content ?? parent.text ?? parent.message ?? parent.data ?? '';
-                const pparts = asVkParts(pcontent);
-                const phtml = vkContent(pparts);
+                const pparts = asVkParts(parent.content ?? parent.text ?? parent.message ?? parent.data ?? '');
                 const ptext = pparts.map(p => p.v || '').join('').trim();
-                if(pname || ptext) reply = `<div class="reply">[<span class="reply-label">Ответ </span><span class="reply-name">${esc(pname)}</span><span class="reply-text">: ${phtml}</span>]</div>`;
+                if(pname || ptext) reply = `<span class="reply"><span class="reply-label">Ответ </span><span class="reply-name">${esc(pname)}</span><span class="reply-text">: ${vkContent(pparts)}</span></span>`;
             }
             if(!html.trim()) console.log('[MergedChat] VK history empty content', m);
-            return `<div class="hr" data-mid="${esc(id)}"><div class="hm">${esc(when || id || name)}<span class="hrow-mod"><button data-hact="delete" title="Удалить сообщение">🗑</button><span class="hstatus" hidden></span></span></div>${reply}<span class="ht">${html || '<span style="color:#777">[empty]</span>'}</span></div>`;
+            return histRow({ id, when:msg?.created_at || msg?.createdAt || msg?.createTime || msg?.timestamp || '', reply,
+                html:html || '<span style="color:var(--muted)">[пусто]</span>' });
         }
         async function openVkHistory(name, userId){
             const w = window.open('', '_blank', popupFeatures('mcVkHistoryWindow', { width:640, height:760, left:100, top:80 }));
             if(!w) return;
             rememberPopup(w, 'mcVkHistoryWindow');
             const userColor = rememberedColor('vk', name, userId) || '#4da3ff';
-            const page = `<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>VK история: ${esc(name)}</title>
-                <style>
-                body{background:#121212;color:#eee;font-family:'Inter',system-ui,Arial,sans-serif;margin:0}
-                .hd{position:sticky;top:0;background:#1f1f23;padding:14px 18px;border-bottom:1px solid #333;box-shadow:0 4px 12px rgba(0,0,0,.4);z-index:2}
-                .hn{font-size:18px;font-weight:700;color:${esc(userColor)}}
-                .hm{font-size:12px;color:#888;margin-top:3px}
-                .hist-actions{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
-                .hist-actions button,.hrow-mod button{border:1px solid #444;background:#202225;color:#ddd;border-radius:4px;padding:4px 7px;cursor:pointer;font-weight:700}
-                .hist-actions button:hover,.hrow-mod button:hover{background:#333;color:#fff}
-                .hist-actions .danger,.hrow-mod button:hover{border-color:#7a1d1d}
-                ${HIST_BTN_CSS}
-                .hrow-mod{float:right;display:inline-flex;gap:5px;align-items:center;margin-left:8px}
-                .hstatus{color:#b8ff9e;margin-left:4px}.hstatus.bad{color:#ffb0b8}
-                .wrap{padding:14px 18px;max-width:820px;margin:0 auto}
-                .hr{padding:8px 0;border-bottom:1px solid #242424;line-height:1.45}
-                .hr.removed{opacity:.45;text-decoration:line-through}
-                .reply{display:block;color:#a8a8b3;font-size:.82em;margin-bottom:2px;border-left:2px solid #6f54ff;padding-left:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-                .reply-label{color:#8d8d96}.reply-name{font-weight:700;color:#b89cff}.reply-text{color:#b8b8c0}
-                img.emote{vertical-align:-.25em;height:1.35em;max-width:1.55em;width:auto;object-fit:contain;margin:-.12em .08em}
-                a{color:#53a8fc;text-decoration:none}
-                #more{display:block;margin:14px auto 20px;border:1px solid #444;background:#202225;color:#fff;border-radius:5px;padding:8px 12px;font-weight:700;cursor:pointer}
-                </style></head><body>
-                <div class="hd"><div class="hn">${esc(name)}</div><div id="meta" class="hm">VK · загрузка…</div>
-                <div class="hist-actions"><button data-uact="timeout" data-min="10">10м</button><button data-uact="timeout" data-min="60">1ч</button><button data-uact="stream-timeout">До стрима</button><button data-uact="timeout" data-min="custom">Тайм-аут…</button><button class="danger" data-uact="ban">Бан</button><button data-uact="clear">Разбан/анмут</button></div></div>
-                <div id="wrap" class="wrap"></div>
-                <button id="more">Ещё</button>
-                </body></html>`;
+            const page = histPage(`VK: ${name}`,
+                histHead({ name, color:userColor, platform:'vk', meta:'VK · загружаю…',
+                    actions:histActions([['10','10м'],['60','1ч'],['stream','До стрима']], 'clear') }),
+                '', '<button id="more">Ещё</button>');
             w.document.open(); w.document.write(page); w.document.close();
             const wrap = w.document.getElementById('wrap');
             const meta = w.document.getElementById('meta');
             const more = w.document.getElementById('more');
-            const hstatus = (root, text, bad=false) => {
-                const el = root.querySelector('.hstatus') || meta;
-                el.textContent = text;
-                el.hidden = false;
-                el.classList?.toggle('bad', bad);
-            };
             const runVkHistoryAction = async (btn) => {
                 const act = btn.dataset.uact || btn.dataset.hact;
                 const row = btn.closest('.hr');
@@ -2521,7 +2612,7 @@
                         if(!mid) throw new Error('no message id');
                         await vkApi('DELETE', `https://api.live.vkvideo.ru/v1/blog/${KICK_SLUG}/public_video_stream/chat/${encodeURIComponent(mid)}`);
                         row.classList.add('removed');
-                        hstatus(row, 'deleted');
+                        histRowStatus(row, 'удалено');
                     } else if(act === 'timeout'){
                         let min = btn.dataset.min;
                         if(min === 'custom') min = prompt('Тайм-аут в минутах', '90');
@@ -2532,14 +2623,14 @@
                             by_stream:'false',
                             is_permanent:'false'
                         });
-                        meta.textContent = `VK · ${name} · timeout ${formatDuration(min)}`;
+                        histNotice(w, `Тайм-аут ${formatDuration(min)} — готово`);
                     } else if(act === 'stream-timeout'){
                         await vkApi('PUT', `https://api.live.vkvideo.ru/v1/channel/${KICK_SLUG}/public_video_stream/ban/stream/slot/default`, {
                             user_id:userId,
                             by_stream:'true',
                             is_permanent:'false'
                         });
-                        meta.textContent = `VK · ${name} · timeout stream`;
+                        histNotice(w, 'Тайм-аут до конца стрима — готово');
                     } else if(act === 'ban'){
                         await vkApi('PUT', `https://api.live.vkvideo.ru/v1/channel/${KICK_SLUG}/public_video_stream/ban/stream/slot/default`, {
                             user_id:userId,
@@ -2547,22 +2638,22 @@
                             by_stream:'false',
                             clean_messages:'true'
                         });
-                        meta.textContent = `VK · ${name} · banned`;
+                        histNotice(w, `${name} забанен, сообщения удалены`);
                     } else if(act === 'clear'){
                         await vkClearBan(userId);
-                        meta.textContent = `VK · ${name} · unbanned/unmuted`;
+                        histNotice(w, 'Бан и тайм-аут сняты');
                     }
                 }catch(err){
                     console.error('vk history moderation error', err);
-                    if(row) hstatus(row, 'error ' + err.message, true);
-                    else meta.textContent = 'VK · ошибка: ' + err.message;
+                    if(row) histRowStatus(row, 'ошибка: ' + err.message, true);
+                    else histNotice(w, 'Не вышло: ' + err.message, true);
                 }finally{
                     btn.disabled = false;
                 }
             };
             w.document.addEventListener('click', e => {
                 const btn = e.target.closest('[data-uact],[data-hact]');
-                if(btn) runVkHistoryAction(btn);
+                if(btn && histArmed(btn)) { histDisarm(btn); runVkHistoryAction(btn); }
             });
             let after = '';
             let loading = false;
@@ -2581,9 +2672,10 @@
                     used.add(after);
                     if(!messages.length){
                         done = true;
-                        if(!loaded) wrap.innerHTML = '<div class="hr">История пуста или VK не отдал сообщения</div>';
+                        if(!loaded) wrap.innerHTML = '<div class="empty">Сообщений нет — или VK их не отдал</div>';
                     } else {
                         wrap.insertAdjacentHTML('beforeend', messages.map(m => vkHistoryRow(m, name)).join(''));
+                        histMarkDays(wrap);
                         loaded += messages.length;
                         const last = messages[messages.length - 1] || {};
                         const lastMsg = (last?.type === 'message' && last?.data && typeof last.data === 'object') ? last.data : (last?.message && typeof last.message === 'object' ? last.message : last);
@@ -2591,11 +2683,12 @@
                         if(!next || String(next) === String(after)) done = true;
                         else after = String(next);
                     }
-                    meta.textContent = `VK · сообщений загружено: ${loaded}${done ? ' · конец' : ''}`;
+                    meta.textContent = `VK · сообщений: ${loaded}${done ? ' · это все' : ''}`;
                     more.hidden = done;
                 }catch(err){
                     console.error('vk history error', err);
-                    meta.textContent = 'VK · ошибка: ' + err.message;
+                    meta.textContent = 'VK';
+                    histNotice(w, 'История не загрузилась: ' + err.message, true);
                     more.textContent = 'Повторить';
                 }finally{
                     loading = false;
@@ -3068,8 +3161,9 @@
                     responseType: 'text',
                     onload: r => {
                         console.log('[MergedChat] VK API', method, url, r.status, r.responseText);
-                        // протух токен VK — расширение тихо перезагрузит скрытую вкладку VK, она отдаст новый
-                        if((r.status === 401 || r.status === 403) && typeof MC_EXT !== 'undefined') MC_EXT.refreshHelper('vk');
+                        // протух токен VK — расширение перечитает его из куки (читатель сообщений тут ни при чём,
+                        // его не перезагружаем: иначе каждая отказанная проверка рвала бы чат VK)
+                        if((r.status === 401 || r.status === 403) && typeof MC_EXT !== 'undefined') MC_EXT.syncTokens();
                         if(r.status < 200 || r.status >= 300) reject(new Error('HTTP '+r.status+' '+String(r.responseText || '').slice(0,120)));
                         else resolve(r);
                     },
