@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Merged Chat (Kick + VK Play Live)
 // @namespace    grpzdc.mergedchat
-// @version      6.46
+// @version      6.47
 // @description  Перехватывает WebSocket реальных чатов Kick и VK Play Live, собирает все сообщения и рисует единую ленту своим дизайном. Сохраняет весь функционал родных чатов (авторизация, бан и т.д.).
 // @match        https://kick.com/popout/*/chat*
 // @match        https://dashboard.kick.com/*
@@ -1312,15 +1312,16 @@
             #stale-banner:active{transform:translateX(-50%) scale(.97)}
             @media (prefers-reduced-motion:reduce){.msg{animation:none}}
             /* свой срок тайм-аута в меню ленты: поле, ползунок, кнопка на всю ширину */
-            .timeout-pop{min-width:248px}
+            .timeout-pop:has(.tp-custom){width:260px}
             .timeout-pop .tp-custom{display:flex;flex-direction:column;gap:6px;padding-top:8px;border-top:1px solid var(--border)}
             .timeout-pop .tp-sub{font-size:11px;color:var(--muted)}
             .timeout-pop .dp{display:flex;flex-direction:column;gap:6px}
             .timeout-pop .dp-row{display:flex;align-items:center;gap:5px}
             .timeout-pop .dp-num{width:64px}
             .timeout-pop .dp-num,.timeout-pop .dp-unit{height:28px;padding:0 6px;border:1px solid var(--border);border-radius:6px;background:var(--surface-0);color:var(--text);font:inherit;font-size:13px}
-            .timeout-pop .dp-human{font-size:11px;color:var(--muted);white-space:nowrap}
-            .timeout-pop .tp-set{width:100%;background:var(--accent);border-color:var(--accent-dark);color:var(--accent-contrast)}
+            .timeout-pop .dp-human{min-width:0;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+            .timeout-pop .dp-range{width:100%}
+            .timeout-pop .tp-set{width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:var(--accent);border-color:var(--accent-dark);color:var(--accent-contrast)}
             .timeout-pop .tp-set:hover{background:var(--accent-bright)}
             .timeout-pop .tp-set:disabled{background:var(--surface-2);border-color:var(--border);color:var(--muted);opacity:1}
             .timeout-pop .dp-range{-webkit-appearance:none;appearance:none;height:20px;margin:0;background:transparent;cursor:pointer}
@@ -2278,20 +2279,24 @@
             .hist-actions>button:hover,#more:hover{background:var(--surface-3)}
             .hist-actions .danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 45%,var(--border))}
             .hist-actions .danger:hover,.hist-actions .danger.armed{background:var(--danger);border-color:var(--danger);color:#fff}
-            .custom-to{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-top:10px;font-size:12px;color:var(--muted)}
-            .custom-to .ct-l{flex:0 0 auto}
-            .custom-to .go{height:30px;padding:0 12px;border:1px solid var(--accent-dark);border-radius:8px;background:var(--accent);color:var(--accent-contrast);white-space:nowrap}
+            /* ползунок — своей строкой во всю ширину: текст кнопки и подпись меняются, пока его крутишь, и не должны его двигать */
+            .custom-to{display:grid;grid-template-columns:auto auto minmax(0,1fr);grid-template-areas:"l row go" "r r r";align-items:center;gap:8px 10px;
+                margin-top:10px;font-size:12px;color:var(--muted)}
+            .custom-to .ct-l{grid-area:l}
+            .custom-to .dp{display:contents}
+            .custom-to .dp-row{grid-area:row;min-width:0}
+            .custom-to .dp-range{grid-area:r;width:100%}
+            .custom-to .go{grid-area:go;width:100%;min-width:0;height:30px;padding:0 12px;border:1px solid var(--accent-dark);border-radius:8px;background:var(--accent);color:var(--accent-contrast);
+                white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
             .custom-to .go:hover{background:var(--accent-bright)}
             .custom-to .go:disabled{background:var(--surface-1);border-color:var(--border);color:var(--muted);opacity:1}
-            .dp{flex:1 1 260px;display:flex;align-items:center;gap:10px;min-width:0}
-            .dp-row{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+            .dp-row{display:flex;align-items:center;gap:6px}
             .dp-num,.dp-unit{height:30px;border:1px solid var(--border);border-radius:8px;background:var(--surface-0);color:var(--text);font:inherit;font-size:13px;padding:0 8px}
             .dp-num{width:72px}
             .dp-num:focus,.dp-unit:focus{outline:2px solid var(--accent);outline-offset:1px}
             .dp-num.invalid{border-color:var(--danger);outline-color:var(--danger)}
-            .dp-human{font-size:12px;color:var(--muted);white-space:nowrap}
+            .dp-human{min-width:0;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
             .dp-human:empty{display:none}
-            .dp-range{flex:1 1 120px;min-width:100px}
             .dp-range{-webkit-appearance:none;appearance:none;height:20px;margin:0;background:transparent;cursor:pointer}
             .dp-range::-webkit-slider-runnable-track{height:4px;border-radius:4px;background:linear-gradient(to right,var(--accent) var(--p,0%),color-mix(in srgb,var(--text) 16%,transparent) var(--p,0%))}
             .dp-range::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;margin-top:-6px;border-radius:50%;background:var(--panel);border:2px solid var(--accent);transition:transform .1s ease}

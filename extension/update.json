@@ -1,6 +1,6 @@
 {
-  "version": "6.46",
-  "notes": "Свой срок тайм-аута: поле и ползунок, единицы сами поправляются",
+  "version": "6.47",
+  "notes": "Ползунок срока больше не скачет, пока его крутишь",
   "files": [
     {
       "path": "background.js",
@@ -9,8 +9,8 @@
     },
     {
       "path": "chat.js",
-      "sha256": "c2b4794b180f6152d7c373d0c071a1bd95b62810bafc39d0f4a9dfdfefadb5b7",
-      "size": 296590
+      "sha256": "f28815af7b834f29c6c5de87f811aa36078ef2e7f515171a8b7649651f321145",
+      "size": 297219
     },
     {
       "path": "config.js",
@@ -49,7 +49,7 @@
     },
     {
       "path": "manifest.json",
-      "sha256": "784a0117468ddb60c020af509d1b80d08cd451198c484e407ff0763b4fd34b82",
+      "sha256": "a6d5365c66ade57e6bab5e95444dc7e6ebf0ad8364047590d9da5f664306aeb4",
       "size": 2112
     },
     {
