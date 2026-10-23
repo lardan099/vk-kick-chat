@@ -6,7 +6,7 @@ if (MC_EXT.skip) return;
 // ==UserScript==
 // @name         Merged Chat (Kick + VK Play Live)
 // @namespace    grpzdc.mergedchat
-// @version      6.53
+// @version      6.52
 // @description  Перехватывает WebSocket реальных чатов Kick и VK Play Live, собирает все сообщения и рисует единую ленту своим дизайном. Сохраняет весь функционал родных чатов (авторизация, бан и т.д.).
 // @match        https://kick.com/popout/*/chat*
 // @match        https://dashboard.kick.com/*
@@ -1277,8 +1277,7 @@ if (MC_EXT.skip) return;
             .nick-menu .nm-hl-dot:hover{background:var(--c);transform:scale(1.2)}
             .nick-menu .nm-hl-dot:active{transform:scale(.9)}
             .nick-menu .nm-hl-dot.on{border:0;box-shadow:0 0 0 2px var(--panel),0 0 0 3.5px var(--c)}
-            .nick-menu .nm-hl-off{width:auto;min-width:0;height:22px;flex:0 0 auto;display:inline-flex;align-items:center;padding:0 8px;border:1px solid var(--border);border-radius:6px;
-                background:transparent;color:var(--muted);font-size:11px;font-weight:600;line-height:1;white-space:nowrap}
+            .nick-menu .nm-hl-off{height:22px;padding:0 8px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--muted);font-size:11px;font-weight:600}
             .nick-menu .nm-hl-off:hover{color:var(--text);background:var(--accent-soft)}
             /* подтверждение действия (flash: «Скопировано» и т.п.) */
             @keyframes mc-done{0%{transform:scale(1)}40%{transform:scale(1.06)}100%{transform:scale(1)}}

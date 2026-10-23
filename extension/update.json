@@ -1,6 +1,6 @@
 {
-  "version": "6.53",
-  "notes": "Полоску «Вышла версия» можно скрыть; кнопка «Снять» в выделении на месте",
+  "version": "6.52",
+  "notes": "Полоску «Вышла версия» можно скрыть до следующей версии",
   "files": [
     {
       "path": "background.js",
@@ -9,8 +9,8 @@
     },
     {
       "path": "chat.js",
-      "sha256": "c6719967d5c866a60c262c25541620d778d8a1b4ec863ea888a9b89af97b969d",
-      "size": 315402
+      "sha256": "e080c70d5f29b818accf72586418461aba96a3d1040aeb5b99b98d112cae771e",
+      "size": 315276
     },
     {
       "path": "config.js",
@@ -49,7 +49,7 @@
     },
     {
       "path": "manifest.json",
-      "sha256": "b9ac623633eafeb2dee755ead2e5d884f8ed3565f86e0310f00d1521bedb5f7b",
+      "sha256": "fc94048a02cf7e5a8970068d20d9b1bfd73cfaf49ee5238606f649d28b620397",
       "size": 2112
     },
     {
