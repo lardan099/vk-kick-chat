@@ -79,6 +79,11 @@ $('open').addEventListener('click', async () => { await send('feed:open'); windo
 $('restart').addEventListener('click', () => busy($('restart'), 'Перезапускаю…', () => send('helpers:restart')));
 $('check').addEventListener('click', () => busy($('check'), 'Проверяю…', () => send('update:check')));
 $('upd-go').addEventListener('click', async () => { await send('update:open', { auto: true }); window.close(); });
+$('transfer').addEventListener('click', async () => { await send('transfer:open'); window.close(); });
+chrome.storage.local.get('mc_local_user_aliases_v1').then(({ mc_local_user_aliases_v1: a }) => {
+    const n = a && typeof a === 'object' ? Object.keys(a).length : 0;
+    $('alias-count').textContent = n ? `сейчас ${n}` : 'пока нет';
+});
 $('folder').addEventListener('click', () => chrome.tabs.create({ url: chrome.runtime.getURL('updater.html?setup=1') }));
 document.body.addEventListener('click', async e => {
     const b = e.target.closest('button[data-show], button[data-refresh]');

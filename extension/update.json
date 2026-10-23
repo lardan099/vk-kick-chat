@@ -1,16 +1,16 @@
 {
-  "version": "6.47",
-  "notes": "Ползунок срока больше не скачет, пока его крутишь",
+  "version": "6.48",
+  "notes": "Перенос переименований из Tampermonkey; предупреждение о старом скрипте; иконки крупнее",
   "files": [
     {
       "path": "background.js",
-      "sha256": "7f025a113fae80db1667a8b4637d79be5189a483bec586e5476ee4bb5836aee8",
-      "size": 32960
+      "sha256": "ccc41abd9b0e7dadc129189fd771dcf0a2e300dd57d8b4339930e59f24341691",
+      "size": 33523
     },
     {
       "path": "chat.js",
-      "sha256": "f28815af7b834f29c6c5de87f811aa36078ef2e7f515171a8b7649651f321145",
-      "size": 297219
+      "sha256": "8877a8a4958e7044090a0213a923ee1a06dff13a608c6f1296d9250f314fd664",
+      "size": 297727
     },
     {
       "path": "config.js",
@@ -19,8 +19,8 @@
     },
     {
       "path": "ext-ui.js",
-      "sha256": "5a51c65633548a4fe1c3a01807702bddc040419688095cfbe5a897536075477a",
-      "size": 16482
+      "sha256": "c6f8f0b8b8ec20138bca93de499734476a9ae0483ed5897ef361631230b6855f",
+      "size": 20271
     },
     {
       "path": "gm-shim.js",
@@ -49,7 +49,7 @@
     },
     {
       "path": "manifest.json",
-      "sha256": "a6d5365c66ade57e6bab5e95444dc7e6ebf0ad8364047590d9da5f664306aeb4",
+      "sha256": "a69960c2b6129d5667f22c8caedeac85752022127be17254fb9c689d92343b4c",
       "size": 2112
     },
     {
@@ -69,13 +69,13 @@
     },
     {
       "path": "popup.html",
-      "sha256": "0cec0facd6c5a318353d41f0047e44a84dcc64c01b2cd4c2a47855f03103fae4",
-      "size": 3085
+      "sha256": "457f55bd9d84cc091417bfb767f8e90339ab31653559953d47c1c2b806d19b08",
+      "size": 3479
     },
     {
       "path": "popup.js",
-      "sha256": "d7ea3f6492993300ac3c3ed4d417ae7798f36b9d9e570e22cb64474c215b70f8",
-      "size": 6965
+      "sha256": "e7ea59f9ea15747836cc56eef452560ef693010ba02cfe0661bb780f6b55d693",
+      "size": 7214
     },
     {
       "path": "theme.js",
@@ -83,9 +83,19 @@
       "size": 444
     },
     {
+      "path": "transfer.html",
+      "sha256": "51596cb01cf325f0b7c235c212c4ae54a823c35ab5217239bb386501beaf1d69",
+      "size": 3478
+    },
+    {
+      "path": "transfer.js",
+      "sha256": "daa03f792575075cd288da14e8933aa9912ce3c3770540c23073d0ce9098cfdd",
+      "size": 11830
+    },
+    {
       "path": "ui.css",
-      "sha256": "90f1e3385d09ee8a42f8f822c0e4aa37c496a3d93f3463479e54c8ff2d4a55eb",
-      "size": 5875
+      "sha256": "041ea9a59b5276b99f56052fe4c167463a49b8b1c272d226c127d76758800b4f",
+      "size": 7103
     },
     {
       "path": "updater.html",

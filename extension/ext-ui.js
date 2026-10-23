@@ -28,6 +28,7 @@
         const bar = document.getElementById('bar');
         const right = bar && bar.querySelector('.bar-right');
         if (!right) return;
+        watchOldUserscript();
 
         const style = document.createElement('style');
         style.textContent = `
@@ -229,7 +230,7 @@
             toast(`Перенесено из Tampermonkey: ${imp.aliases} переименований, выделения и шаблоны`, 7000);
             GM_setValue('ext_tm_import', { ...imp, shown: true });
         }
-        // юзерскрипт успел запуститься раньше расширения — два чата в одном окне
+        // юзерскрипт 6.43+ успел запуститься раньше расширения — два чата в одном окне
         if (document.documentElement.dataset.mcUserscript) {
             const warn = document.createElement('div');
             warn.style.cssText = 'flex:0 0 auto;padding:5px 10px;font-size:12px;font-weight:700;color:#fff;background:#b03a2e;border-bottom:1px solid #7d2a21';
@@ -240,4 +241,64 @@
         // чат открыт — пусть воркер сразу поднимет сборщики
         MC_EXT.send('feed:hello').catch(() => { });
     });
+
+    // Старый юзерскрипт (до 6.43) не знает про расширение: если он стартует позже, то перерисовывает окно
+    // своим чатом — без VK (сборщика VK у него в скрытом режиме нет). Замечаем это по пропавшей метке
+    // на нашем body и показываем поверх, что делать.
+    function watchOldUserscript() {
+        document.body.dataset.mcOwner = 'ext';
+        let shown = false;
+        const check = () => {
+            if (shown || (document.body && document.body.dataset.mcOwner === 'ext')) return;
+            if (!document.getElementById('bar') && !document.getElementById('chat')) return; // ещё не дорисовал
+            shown = true;
+            showTakeover();
+        };
+        new MutationObserver(check).observe(document.documentElement, { childList: true });
+        const timer = setInterval(check, 1000);
+        setTimeout(() => clearInterval(timer), 60000);
+    }
+    function showTakeover() {
+        const host = document.createElement('div');
+        host.id = 'mcx-takeover';
+        const root = host.attachShadow({ mode: 'open' });
+        root.innerHTML = `<style>
+            :host{all:initial}
+            .back{position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;padding:16px;
+                background:color-mix(in srgb,var(--bg,#111) 72%,transparent);backdrop-filter:blur(3px);font:13px/1.45 Inter,system-ui,Arial,sans-serif;animation:in .18s ease-out}
+            .card{max-width:380px;padding:16px 18px;border-radius:12px;background:var(--panel,#1b1b1f);color:var(--text,#eee);
+                border:1px solid var(--border,#3a3a40);box-shadow:0 14px 40px rgba(0,0,0,.35)}
+            h1{margin:0 0 6px;font-size:15px}
+            p{margin:0 0 10px;color:var(--muted,#aaa)}
+            ol{margin:0 0 12px;padding-left:18px}li{margin:4px 0}
+            .row{display:flex;gap:8px;flex-wrap:wrap}
+            button{font:inherit;font-weight:600;cursor:pointer;height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--border,#3a3a40);
+                background:var(--surface-2,#2a2a30);color:var(--text,#eee);transition:background-color .14s,transform .1s}
+            button:hover{background:var(--surface-3,#34343b)}button:active{transform:scale(.97)}
+            .main{background:var(--accent,#53fc18);border-color:var(--accent-dark,#3aa012);color:var(--accent-contrast,#000)}
+            .main:hover{background:var(--accent-bright,#6dff3a)}
+            @keyframes in{from{opacity:0}to{opacity:1}}
+        </style>
+        <div class="back"><div class="card" role="alertdialog" aria-labelledby="t">
+            <h1 id="t">Окно перехватил старый Merged Chat</h1>
+            <p>В Tampermonkey включён скрипт Merged Chat. Он нарисовал поверх расширения свой чат, а VK в нём нет.</p>
+            <ol>
+                <li>Перенеси переименования из Tampermonkey (один раз).</li>
+                <li>Выключи Merged Chat в Tampermonkey.</li>
+                <li>Перезагрузи это окно.</li>
+            </ol>
+            <div class="row">
+                <button class="main" data-a="transfer">Перенести переименования</button>
+                <button data-a="reload">Перезагрузить</button>
+                <button data-a="close">Скрыть</button>
+            </div>
+        </div></div>`;
+        root.addEventListener('click', e => {
+            const a = e.target.closest('button') && e.target.closest('button').dataset.a;
+            if (a === 'transfer') MC_EXT.send('transfer:open').catch(() => { });
+            if (a === 'reload') location.reload();
+            if (a === 'close') host.remove();
+        });
+        document.documentElement.appendChild(host);
+    }
 })();

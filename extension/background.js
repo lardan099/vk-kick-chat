@@ -535,6 +535,17 @@ async function checkUpdate() {
     return info;
 }
 
+// страница ручного переноса из Tampermonkey — одна вкладка, повторно не плодим
+async function openTransfer() {
+    const url = chrome.runtime.getURL('transfer.html');
+    const [tab] = await chrome.tabs.query({ url });
+    if (tab) {
+        await chrome.tabs.update(tab.id, { active: true });
+        await chrome.windows.update(tab.windowId, { focused: true }).catch(() => { });
+    } else await chrome.tabs.create({ url, active: true });
+    return true;
+}
+
 async function openUpdater(auto) {
     if (isStoreInstall()) {
         // из Web Store: Chrome скачает обновление сам, onUpdateAvailable перезапустит
@@ -626,6 +637,7 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
         'helpers:restart': () => serial(restartAll).then(() => serial(watchdog)),
         'helpers:status': () => serial(watchdog),
         'feed:open': () => openFeed(),
+        'transfer:open': () => openTransfer(),
         'update:check': () => checkUpdate(),
         'update:open': () => openUpdater(!!msg.auto)
     };

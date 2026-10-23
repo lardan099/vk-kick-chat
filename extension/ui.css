@@ -87,3 +87,22 @@ details>summary:hover{color:var(--text)}
 .versions{font-size:13px;margin:2px 0}
 .versions b{font-weight:700}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* страница переноса из Tampermonkey */
+.sheet.transfer{max-width:640px;font-size:13px}
+.transfer h2{margin-top:2px}
+.how{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.how-item{padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface-0)}
+.how-item ol{margin:6px 0 2px}
+.drop{border:1px dashed var(--border);border-radius:8px;background:var(--surface-1);transition:border-color .12s,background-color .12s}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop textarea{display:block;width:100%;min-height:130px;resize:vertical;border:0;background:transparent;color:var(--text);
+  font:12px/1.4 ui-monospace,Consolas,monospace;padding:9px 10px;outline:none}
+.transfer .actions{margin-top:8px}
+.transfer .actions .btn{flex:0 0 auto}
+.transfer .check{margin-top:8px}
+.btn.file{display:inline-flex;align-items:center}
+.result{margin-top:8px;padding:8px 10px;border-radius:8px;border:1px solid var(--accent-medium);background:var(--accent-soft);animation:open .16s ease-out}
+.result.bad{border-color:rgba(210,69,69,.4);background:rgba(210,69,69,.1)}
+.result ul{margin:4px 0 0;padding-left:18px}
+@media (max-width:560px){.how{grid-template-columns:1fr}}

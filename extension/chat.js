@@ -6,7 +6,7 @@ if (MC_EXT.skip) return;
 // ==UserScript==
 // @name         Merged Chat (Kick + VK Play Live)
 // @namespace    grpzdc.mergedchat
-// @version      6.47
+// @version      6.48
 // @description  Перехватывает WebSocket реальных чатов Kick и VK Play Live, собирает все сообщения и рисует единую ленту своим дизайном. Сохраняет весь функционал родных чатов (авторизация, бан и т.д.).
 // @match        https://kick.com/popout/*/chat*
 // @match        https://dashboard.kick.com/*
@@ -1255,7 +1255,7 @@ if (MC_EXT.skip) return;
             /* меню ника — обычное контекстное меню: пункты строками, одинаковые линейные иконки */
             .nick-menu{min-width:224px;padding:4px;gap:1px;border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.28)}
             .nick-menu .nm-head{display:flex;align-items:center;gap:9px;padding:7px 9px 9px;margin-bottom:3px;border-bottom:1px solid var(--border)}
-            .nick-menu .nm-plat{width:16px;height:16px;border-radius:4px;flex:0 0 auto}
+            .nick-menu .nm-plat{width:20px;height:20px;border-radius:5px;flex:0 0 auto}
             .nick-menu .nm-who{min-width:0;display:grid;gap:1px}
             .nick-menu .nm-title{padding:0;margin:0;border:0;font-size:13px;font-weight:700;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
             .nick-menu .nm-sub{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1296,13 +1296,14 @@ if (MC_EXT.skip) return;
             .msg+.msg{margin-top:1px}
             .msg:hover{background:color-mix(in srgb,var(--text) 6%,transparent)}
             @keyframes mc-msg-in{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
-            .plat{width:16px;height:16px;border-radius:4px;margin-right:5px;vertical-align:-3px}
+            .plat{width:20px;height:20px;border-radius:5px;margin-right:6px;vertical-align:-5px}
+            .platform-stat img{width:18px;height:18px;opacity:.9}
             .badge.img{border-radius:3px}
             .name{margin-right:3px}
             .msg .ts{float:right;margin:1px 0 0 8px;font-size:11px;line-height:1.6;color:var(--muted);font-variant-numeric:tabular-nums;
                 opacity:0;transition:opacity .12s ease;user-select:none}
             .msg:hover .ts,.thread-msg .ts{opacity:1}
-            .reply,html[data-theme="light"] .reply{margin-left:21px;border-left:2px solid var(--accent-strong);color:var(--muted)}
+            .reply,html[data-theme="light"] .reply{margin-left:26px;border-left:2px solid var(--accent-strong);color:var(--muted)}
             .reply-label,.reply-text,html[data-theme="light"] .reply-label,html[data-theme="light"] .reply-text{color:inherit}
             .reply[data-parent-id]:hover,html[data-theme="light"] .reply[data-parent-id]:hover{border-left-color:var(--accent);color:var(--text);background:transparent}
             .msg.reply-target{outline:0;background:var(--accent-medium);box-shadow:inset 3px 0 0 var(--accent)}
@@ -1723,6 +1724,10 @@ if (MC_EXT.skip) return;
             else if(el.classList.contains('mention')) el.title = `Действия с ${name}`;
             else el.title = `Действия с ${name}`;
         }
+        // переименования пришли извне (перенос из Tampermonkey, другое окно) — переписываем видимые ники
+        GM_addValueChangeListener(LOCAL_ALIASES_KEY, (key, oldValue, newValue, remote) => {
+            if(remote) document.querySelectorAll('.name[data-name],.mention[data-name],.mod-name[data-name],.reply-name[data-name]').forEach(applyAliasToElement);
+        });
         function refreshLocalAliases(platform, name, userId=''){
             document.querySelectorAll('.name[data-name],.mention[data-name],.mod-name[data-name],.reply-name[data-name]').forEach(el => {
                 const elPlatform = el.dataset.plat || el.closest('.msg')?.dataset.plat || 'vk';
