@@ -1,5 +1,5 @@
 // Перенос настроек из Tampermonkey вручную: текст вкладки «Хранилище», файл экспорта
-// (zip или json) или наша запасная копия. Берём только настройки чата — не токены и не очереди.
+// (json) или наша запасная копия. Берём только настройки чата — не токены и не очереди.
 const $ = id => document.getElementById(id);
 
 const KEYS = {
@@ -62,50 +62,10 @@ function parseText(text) {
     return asAliasMap(obj) || findData(obj);
 }
 
-// ---------- zip из «Утилиты → Экспорт» ----------
-async function inflate(bytes) {
-    const ds = new DecompressionStream('deflate-raw');
-    const buf = await new Response(new Blob([bytes]).stream().pipeThrough(ds)).arrayBuffer();
-    return new Uint8Array(buf);
-}
-async function zipTexts(buf) {
-    const u8 = new Uint8Array(buf), dv = new DataView(buf);
-    let eocd = -1;
-    for (let i = u8.length - 22; i >= Math.max(0, u8.length - 65557); i--) if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
-    if (eocd < 0) throw new Error('Не получилось открыть zip');
-    const count = dv.getUint16(eocd + 10, true);
-    let p = dv.getUint32(eocd + 16, true);
-    const out = [];
-    const dec = new TextDecoder();
-    for (let n = 0; n < count; n++) {
-        if (dv.getUint32(p, true) !== 0x02014b50) break;
-        const method = dv.getUint16(p + 10, true), size = dv.getUint32(p + 20, true);
-        const nameLen = dv.getUint16(p + 28, true), extraLen = dv.getUint16(p + 30, true), commentLen = dv.getUint16(p + 32, true);
-        const local = dv.getUint32(p + 42, true);
-        const name = dec.decode(u8.subarray(p + 46, p + 46 + nameLen));
-        p += 46 + nameLen + extraLen + commentLen;
-        if (!/\.json$/i.test(name)) continue;
-        const start = local + 30 + dv.getUint16(local + 26, true) + dv.getUint16(local + 28, true);
-        const raw = u8.subarray(start, start + size);
-        const data = method === 8 ? await inflate(raw) : method === 0 ? raw : null;
-        if (data) out.push({ name, text: dec.decode(data) });
-    }
-    return out;
-}
-
 async function parseFile(file) {
     const buf = await file.arrayBuffer();
-    const head = new Uint8Array(buf, 0, Math.min(4, buf.byteLength));
-    if (head[0] === 0x50 && head[1] === 0x4b) {
-        let best = null;
-        for (const { text } of await zipTexts(buf)) {
-            let d = null;
-            try { d = findData(JSON.parse(text)); } catch (e) { }
-            if (d && (!best || aliasCount(d) > aliasCount(best))) best = d;
-        }
-        if (!best) throw new Error('В архиве нет хранилища Merged Chat — при экспорте должно быть включено «хранилище скриптов»');
-        return best;
-    }
+    const head = new Uint8Array(buf, 0, Math.min(2, buf.byteLength));
+    if (head[0] === 0x50 && head[1] === 0x4b) throw new Error('Это zip. В Tampermonkey выбери «Экспорт» в строке «Файл» (не zip) — или скопируй текст из вкладки «Хранилище»');
     return parseText(new TextDecoder().decode(buf));
 }
 

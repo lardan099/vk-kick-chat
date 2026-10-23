@@ -150,7 +150,7 @@
                 <div class="mcx-actions">
                     <button class="mcx-panel-btn" data-act="restart" ${busy ? 'disabled' : ''}>Перезапустить всё</button>
                     ${upd && upd.available
-                        ? `<button class="mcx-panel-btn accent" data-act="install">Обновить до ${esc(upd.latest)}</button>`
+                        ? `<button class="mcx-panel-btn accent" data-act="install">Как обновить до ${esc(upd.latest)}</button>`
                         : `<button class="mcx-panel-btn" data-act="check" ${busy ? 'disabled' : ''}>Проверить обновления</button>`}
                 </div>
                 <div class="mcx-note">${note}</div>`;

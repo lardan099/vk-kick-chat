@@ -48,7 +48,7 @@ async function render() {
     if (upd && upd.available) {
         $('upd-text').innerHTML = `<div class="versions">${esc(upd.current)} → <b>${esc(upd.latest)}</b></div>`
             + (upd.notes ? `<div class="note">${esc(upd.notes)}</div>` : '');
-        $('upd-go').textContent = `Обновить до ${upd.latest}`;
+        $('upd-go').textContent = `Как обновить до ${upd.latest}`;
     }
 }
 
@@ -84,7 +84,6 @@ chrome.storage.local.get('mc_local_user_aliases_v1').then(({ mc_local_user_alias
     const n = a && typeof a === 'object' ? Object.keys(a).length : 0;
     $('alias-count').textContent = n ? `сейчас ${n}` : 'пока нет';
 });
-$('folder').addEventListener('click', () => chrome.tabs.create({ url: chrome.runtime.getURL('updater.html?setup=1') }));
 document.body.addEventListener('click', async e => {
     const b = e.target.closest('button[data-show], button[data-refresh]');
     if (!b) return;

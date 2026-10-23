@@ -553,7 +553,7 @@ async function openUpdater(auto) {
         return;
     }
     await chrome.windows.create({
-        url: chrome.runtime.getURL('updater.html' + (auto ? '?auto=1' : '')),
+        url: chrome.runtime.getURL('updater.html'),
         type: 'popup', width: 520, height: 560, focused: true
     });
 }
@@ -569,7 +569,6 @@ function setupAlarms() {
 chrome.runtime.onInstalled.addListener(async details => {
     setupAlarms();
     await installHeaderRules();
-    if (details.reason === 'install') chrome.tabs.create({ url: chrome.runtime.getURL('updater.html?setup=1') });
     if (details.reason === 'update') {
         // старые скрипты во вкладках отключились от расширения — перезагружаем (без фокуса)
         for (const t of await allTabs()) {

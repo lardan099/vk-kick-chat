@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Merged Chat (Kick + VK Play Live)",
   "short_name": "Merged Chat",
-  "version": "6.49",
+  "version": "6.50",
   "description": "Единая лента чатов Kick и VK Play Live. Нужные вкладки держит в фоне сам, обновляется в один клик.",
   "minimum_chrome_version": "116",
   "icons": {

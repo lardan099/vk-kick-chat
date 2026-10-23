@@ -6,7 +6,7 @@ if (MC_EXT.skip) return;
 // ==UserScript==
 // @name         Merged Chat (Kick + VK Play Live)
 // @namespace    grpzdc.mergedchat
-// @version      6.49
+// @version      6.50
 // @description  Перехватывает WebSocket реальных чатов Kick и VK Play Live, собирает все сообщения и рисует единую ленту своим дизайном. Сохраняет весь функционал родных чатов (авторизация, бан и т.д.).
 // @match        https://kick.com/popout/*/chat*
 // @match        https://dashboard.kick.com/*

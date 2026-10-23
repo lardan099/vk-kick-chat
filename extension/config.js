@@ -5,6 +5,8 @@ export const CONFIG = {
     // Пусто — проверка обновлений выключена (можно задать в окне расширения → «Ещё»).
     updateUrl: 'https://raw.githubusercontent.com/lardan099/vk-kick-chat/main/extension/update.json',
     updateCheckMinutes: 30,
+    // архив для ручного обновления (расширение само файлы не перезаписывает)
+    downloadUrl: 'https://github.com/lardan099/vk-kick-chat/archive/refs/heads/main.zip',
 
     feedUrl: 'https://kick.com/popout/grpzdc/chat#feed',
 

@@ -26,7 +26,7 @@
           <strong>Вариант Б — файлом</strong>
           <ol>
             <li>Панель управления Tampermonkey → «Утилиты».</li>
-            <li>«Экспорт» (zip или файл) — сохранится на компьютер.</li>
+            <li>«Экспорт» в строке «Файл» (не zip) — сохранится на компьютер.</li>
             <li>Перетащи этот файл сюда.</li>
           </ol>
         </div>
@@ -39,7 +39,7 @@
         <textarea id="paste" spellcheck="false" placeholder="Вставь сюда текст из вкладки «Хранилище» — или перетащи файл экспорта"></textarea>
       </div>
       <div class="actions">
-        <label class="btn file">Выбрать файл…<input type="file" id="file" accept=".json,.zip,.txt,application/json,application/zip" hidden></label>
+        <label class="btn file">Выбрать файл…<input type="file" id="file" accept=".json,.txt,application/json,text/plain" hidden></label>
         <button id="go" class="btn accent" disabled>Перенести</button>
       </div>
       <label class="check"><input type="checkbox" id="theirs"><span>Если ник уже переименован у меня — взять имя из Tampermonkey<small>по умолчанию твои переименования остаются как есть</small></span></label>
