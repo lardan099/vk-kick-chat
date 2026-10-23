@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Merged Chat (Kick + VK Play Live)
 // @namespace    grpzdc.mergedchat
-// @version      6.50
+// @version      6.51
 // @description  Перехватывает WebSocket реальных чатов Kick и VK Play Live, собирает все сообщения и рисует единую ленту своим дизайном. Сохраняет весь функционал родных чатов (авторизация, бан и т.д.).
 // @match        https://kick.com/popout/*/chat*
 // @match        https://dashboard.kick.com/*
@@ -1266,14 +1266,13 @@
             .nick-menu .nm-sep{height:1px;margin:3px 7px;background:var(--border);opacity:.6}
             .nick-menu .nm-hl{display:flex;align-items:center;gap:10px;height:32px;padding:0 9px}
             .nick-menu .nm-hl-label{flex:1;font-size:13px;color:var(--text)}
-            .nick-menu .nm-hl-dots{display:flex;align-items:center;gap:6px}
-            .nick-menu .nm-hl-dot{width:14px;height:14px;min-width:14px;padding:0;border:0;border-radius:50%;background:var(--c);
+            .nick-menu .nm-hl-dots{display:grid;grid-template-columns:repeat(9,16px);gap:7px 6px;justify-content:space-between;padding:2px 11px 9px}
+            .nick-menu .nm-hl-dot{width:16px;height:16px;min-width:16px;padding:0;border:0;border-radius:50%;background:var(--c);
                 box-shadow:inset 0 0 0 1px rgba(0,0,0,.18);transition:transform .12s cubic-bezier(.2,.8,.2,1),box-shadow .12s}
             .nick-menu .nm-hl-dot:hover{background:var(--c);transform:scale(1.2)}
             .nick-menu .nm-hl-dot:active{transform:scale(.9)}
             .nick-menu .nm-hl-dot.on{border:0;box-shadow:0 0 0 2px var(--panel),0 0 0 3.5px var(--c)}
-            .nick-menu .nm-hl-off{width:16px;height:16px;min-width:16px;padding:0;display:grid;place-items:center;border:1px solid var(--border);
-                border-radius:50%;background:transparent;color:var(--muted);font-size:9px;line-height:1}
+            .nick-menu .nm-hl-off{height:22px;padding:0 8px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--muted);font-size:11px;font-weight:600}
             .nick-menu .nm-hl-off:hover{color:var(--text);background:var(--accent-soft)}
             /* подтверждение действия (flash: «Скопировано» и т.п.) */
             @keyframes mc-done{0%{transform:scale(1)}40%{transform:scale(1.06)}100%{transform:scale(1)}}
@@ -1331,6 +1330,77 @@
             .timeout-pop .dp-range:hover::-webkit-slider-thumb{transform:scale(1.12)}
             .timeout-pop .dp-range:active::-webkit-slider-thumb{transform:scale(.95)}
             .timeout-pop .dp-range:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+
+            /* ---- Скины ---- */
+            .skin-choice[data-skin-choice]:not([data-skin-choice=""])::before{content:'';display:inline-block;width:10px;height:10px;margin-right:6px;border-radius:50%;
+                background:var(--sw);vertical-align:-1px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+            html[data-skin] #chat{background:transparent}
+            html[data-skin] :where(.msg){background:transparent;box-shadow:none}
+            html[data-skin] :where(.msg:not(.awaiting):not(.reply-to-me):not(.reply-target)):hover{background:var(--accent-soft)}
+
+            /* розовый гламур: блёстки, розовая шапка, пузырьки */
+            html[data-skin="glam"] body{background:
+                radial-gradient(circle at 20% 30%,#fff 0 1px,transparent 2px) 0 0/34px 34px,
+                radial-gradient(circle at 70% 65%,#ffd1ea 0 1.3px,transparent 2.3px) 0 0/52px 52px,
+                radial-gradient(circle at 45% 80%,#fff8 0 .8px,transparent 1.8px) 0 0/23px 23px,
+                linear-gradient(160deg,#ffd6eb 0%,#ffeef6 45%,#ffc8e4 100%);background-attachment:fixed}
+            html[data-skin="glam"] #bar{background:linear-gradient(90deg,#ff5cae,#ff2d95 55%,#ff6fd0);border-bottom:0;box-shadow:0 4px 18px rgba(255,45,149,.35)}
+            html[data-skin="glam"] #st,html[data-skin="glam"] .platform-stat span,html[data-skin="glam"] .sum-mark{color:#fff}
+            html[data-skin="glam"] #platform-stats{border-color:rgba(255,255,255,.45)}
+            html[data-skin="glam"] #bar .bar-btn{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.55);color:#fff}
+            html[data-skin="glam"] #bar .bar-btn:hover{background:rgba(255,255,255,.34)}
+            html[data-skin="glam"] #dot{background:#fff;box-shadow:0 0 8px #fff}
+            html[data-skin="glam"] .msg{border-radius:14px}
+            html[data-skin="glam"] :where(.msg:not(.awaiting):not(.reply-to-me):not(.reply-target)):hover{background:rgba(255,255,255,.55)}
+            html[data-skin="glam"] #composer{background:rgba(255,245,250,.85);border-top:1px solid #f4a6cd;backdrop-filter:blur(6px)}
+            html[data-skin="glam"] #send-message{background:linear-gradient(135deg,#ff5cae,#ff2d95);border-color:#d4006f;box-shadow:0 3px 12px rgba(255,45,149,.4)}
+            html[data-skin="glam"] #message-input{border-radius:12px}
+            html[data-skin="glam"] ::selection{background:#ff6fb5;color:#fff}
+            html[data-skin="glam"] #chat:hover::-webkit-scrollbar-thumb{background:#ff8cc6}
+
+            /* неон: синтвейв-сетка, свечение */
+            html[data-skin="neon"] body{background:
+                linear-gradient(transparent 0 calc(100% - 1px),rgba(255,43,214,.07) 0) 0 0/100% 32px,
+                linear-gradient(90deg,transparent 0 calc(100% - 1px),rgba(0,240,255,.05) 0) 0 0/32px 100%,
+                radial-gradient(ellipse at 50% -10%,#3a0d7a 0%,#0a0420 60%);background-attachment:fixed}
+            html[data-skin="neon"] #bar{background:rgba(10,4,32,.85);border-bottom:1px solid #ff2bd6;box-shadow:0 0 14px rgba(255,43,214,.45)}
+            html[data-skin="neon"] #st{color:#00f0ff;text-shadow:0 0 6px #00f0ff,0 0 14px rgba(0,240,255,.6);letter-spacing:.08em}
+            html[data-skin="neon"] .name{text-shadow:0 0 6px currentColor}
+            html[data-skin="neon"] .text a{color:#00f0ff}
+            html[data-skin="neon"] #dot{background:#00f0ff;box-shadow:0 0 8px #00f0ff}
+            html[data-skin="neon"] #composer{background:rgba(18,10,46,.9);border-top:1px solid #3b1f6e}
+            html[data-skin="neon"] #send-message{box-shadow:0 0 12px rgba(255,43,214,.6)}
+            html[data-skin="neon"] .msg.highlighted{text-shadow:none}
+
+            /* матрица: моноширинный зелёный терминал со строками развёртки */
+            html[data-skin="matrix"] body{font-family:Consolas,'Courier New',monospace;background:
+                repeating-linear-gradient(0deg,rgba(0,255,65,.035) 0 1px,transparent 1px 3px),#000}
+            html[data-skin="matrix"] .text{color:#9dffad}
+            html[data-skin="matrix"] .name{text-shadow:0 0 4px rgba(0,255,65,.45)}
+            html[data-skin="matrix"] #bar{background:#000;border-bottom:1px solid #00ff41}
+            html[data-skin="matrix"] #st{color:#00ff41;text-shadow:0 0 6px #00ff41}
+            html[data-skin="matrix"] .msg,html[data-skin="matrix"] .bar-btn,html[data-skin="matrix"] #message-input,
+            html[data-skin="matrix"] #send-message,html[data-skin="matrix"] .nick-menu,html[data-skin="matrix"] .timeout-pop{border-radius:2px}
+            html[data-skin="matrix"] #composer{background:#000;border-top:1px solid #0f3d17}
+            html[data-skin="matrix"] #message-input{font-family:inherit}
+
+            /* люкс: чёрное с золотом */
+            html[data-skin="lux"] body{background:radial-gradient(ellipse at 50% 0%,#231b0d 0%,#0c0a07 65%);background-attachment:fixed}
+            html[data-skin="lux"] #bar{background:linear-gradient(180deg,#1c160c,#0f0c07);border-bottom:1px solid #d4af37;box-shadow:0 1px 0 rgba(240,207,93,.25)}
+            html[data-skin="lux"] #st{font-family:Georgia,'Times New Roman',serif;letter-spacing:.14em;
+                background:linear-gradient(180deg,#fbe9a7,#d4af37 55%,#9c7c1c);-webkit-background-clip:text;background-clip:text;color:transparent}
+            html[data-skin="lux"] #send-message{background:linear-gradient(180deg,#f0cf5d,#c79a22);border-color:#9c7c1c;color:#1a1408}
+            html[data-skin="lux"] #composer{background:#0f0c07;border-top:1px solid #4a3b1c}
+            html[data-skin="lux"] :where(.msg:not(.awaiting):not(.reply-to-me):not(.reply-target)):hover{background:rgba(212,175,55,.07)}
+
+            /* сакура: светлая, лепестки по фону */
+            html[data-skin="sakura"] body{background:
+                radial-gradient(ellipse 9px 5px at 15% 20%,rgba(247,182,200,.55) 55%,transparent 62%) 0 0/170px 150px,
+                radial-gradient(ellipse 7px 4px at 70% 55%,rgba(251,202,215,.6) 55%,transparent 62%) 0 0/210px 190px,
+                linear-gradient(180deg,#fff7f9,#ffeef3);background-attachment:fixed}
+            html[data-skin="sakura"] #bar{background:rgba(255,250,251,.9);border-bottom:1px solid #f2c6d0}
+            html[data-skin="sakura"] .msg{border-radius:10px}
+            html[data-skin="sakura"] #composer{background:rgba(255,250,251,.92);border-top:1px solid #f2c6d0}
             /* Выделение сообщений человека: тонировка поверх фона любой темы (inset-слой не трогает background) */
             .msg.highlighted:not(.awaiting):not(.reply-to-me){box-shadow:inset 3px 0 0 var(--mc-hl,#ffd700),inset 0 0 0 999px color-mix(in srgb,var(--mc-hl,#ffd700) 26%,transparent)!important}
         `;
@@ -1367,6 +1437,15 @@
                         <button type="button" class="theme-choice" data-theme-choice="dark">Тёмная</button>
                         <button type="button" class="theme-choice" data-theme-choice="light">Светлая</button>
                         <button type="button" class="theme-choice" data-theme-choice="aero">Aero</button>
+                    </div>
+                    <div class="theme-row skin-row">
+                        <strong>Скин</strong>
+                        <button type="button" class="theme-choice skin-choice" data-skin-choice="">Без скина</button>
+                        <button type="button" class="theme-choice skin-choice" data-skin-choice="glam" style="--sw:linear-gradient(135deg,#ff5cae,#ffc4e1)">Розовый гламур</button>
+                        <button type="button" class="theme-choice skin-choice" data-skin-choice="neon" style="--sw:linear-gradient(135deg,#ff2bd6,#00f0ff)">Неон</button>
+                        <button type="button" class="theme-choice skin-choice" data-skin-choice="matrix" style="--sw:linear-gradient(135deg,#00ff41,#003b10)">Матрица</button>
+                        <button type="button" class="theme-choice skin-choice" data-skin-choice="lux" style="--sw:linear-gradient(135deg,#f0cf5d,#7a5c12)">Люкс</button>
+                        <button type="button" class="theme-choice skin-choice" data-skin-choice="sakura" style="--sw:linear-gradient(135deg,#f07a9c,#fde8ee)">Сакура</button>
                     </div>
                     <div class="palette-head"><strong>Палитра</strong><output id="palette-current">PANTONE 7506 C · светлая</output></div>
                     <div id="palette-swatches" role="group" aria-label="Цветовая палитра"></div>
@@ -1496,15 +1575,59 @@
             if(id==='custom') return {id:'custom',name:'Своя палитра',color:customPalette.accent,preview:customPalette.background,scheme:'custom'};
             return ACCENT_PRESETS.find(item => item.id===id || item.color.toLowerCase()===id) || ACCENT_PRESETS[0];
         };
+        // Скины — готовые оформления поверх темы и палитры: свои цвета (ниже, SKINS) и своё оформление (CSS по html[data-skin]).
+        // Выбрал тему или палитру руками — скин снимается.
+        const SKIN_KEY = 'grpzdc-skin-v1';
+        const SKINS = {
+            glam: { base:'light', vars:{ '--bg':'#ffe6f2','--panel':'#fff5fa','--border':'#f4a6cd','--text':'#4a1235','--muted':'#a0587f',
+                '--surface-0':'#fff0f7','--surface-1':'#fff8fb','--surface-2':'#ffd9ec','--surface-3':'#ffc4e1','--surface-4':'#ffadd5',
+                '--accent':'#ff2d95','--accent-bright':'#ff5cae','--accent-dark':'#d4006f','--accent-contrast':'#fff','--accent-rgb':'255 45 149',
+                '--accent-soft':'rgba(255,45,149,.12)','--accent-medium':'rgba(255,45,149,.22)','--accent-strong':'rgba(255,45,149,.45)','--pz-glow':'rgba(255,45,149,.4)' } },
+            neon: { base:'dark', vars:{ '--bg':'#0a0420','--panel':'#120a2e','--border':'#3b1f6e','--text':'#f3eaff','--muted':'#a48cd0',
+                '--surface-0':'#0d0626','--surface-1':'#140b33','--surface-2':'#1b0f42','--surface-3':'#261558','--surface-4':'#321c70',
+                '--accent':'#ff2bd6','--accent-bright':'#ff6be4','--accent-dark':'#b8009a','--accent-contrast':'#fff','--accent-rgb':'255 43 214',
+                '--accent-soft':'rgba(255,43,214,.13)','--accent-medium':'rgba(255,43,214,.24)','--accent-strong':'rgba(255,43,214,.5)','--pz-glow':'rgba(255,43,214,.55)' } },
+            matrix: { base:'dark', vars:{ '--bg':'#000','--panel':'#020a03','--border':'#0f3d17','--text':'#b6ffbf','--muted':'#3fa04f',
+                '--surface-0':'#010601','--surface-1':'#031005','--surface-2':'#051a08','--surface-3':'#08260c','--surface-4':'#0c3412',
+                '--accent':'#00ff41','--accent-bright':'#5cff7f','--accent-dark':'#00b32d','--accent-contrast':'#001a07','--accent-rgb':'0 255 65',
+                '--accent-soft':'rgba(0,255,65,.1)','--accent-medium':'rgba(0,255,65,.2)','--accent-strong':'rgba(0,255,65,.42)','--pz-glow':'rgba(0,255,65,.5)' } },
+            lux: { base:'dark', vars:{ '--bg':'#0c0a07','--panel':'#15110a','--border':'#4a3b1c','--text':'#f5ecd6','--muted':'#b39b6a',
+                '--surface-0':'#0f0c08','--surface-1':'#17130b','--surface-2':'#1f190e','--surface-3':'#2b2312','--surface-4':'#382d17',
+                '--accent':'#d4af37','--accent-bright':'#f0cf5d','--accent-dark':'#9c7c1c','--accent-contrast':'#1a1408','--accent-rgb':'212 175 55',
+                '--accent-soft':'rgba(212,175,55,.12)','--accent-medium':'rgba(212,175,55,.22)','--accent-strong':'rgba(212,175,55,.48)','--pz-glow':'rgba(212,175,55,.4)' } },
+            sakura: { base:'light', vars:{ '--bg':'#fff4f6','--panel':'#fffafb','--border':'#f2c6d0','--text':'#3d2a2f','--muted':'#8d6f77',
+                '--surface-0':'#fff7f9','--surface-1':'#fffbfc','--surface-2':'#fde8ee','--surface-3':'#fad8e2','--surface-4':'#f6c6d4',
+                '--accent':'#e75480','--accent-bright':'#f07a9c','--accent-dark':'#c13a64','--accent-contrast':'#fff','--accent-rgb':'231 84 128',
+                '--accent-soft':'rgba(231,84,128,.11)','--accent-medium':'rgba(231,84,128,.2)','--accent-strong':'rgba(231,84,128,.42)','--pz-glow':'rgba(231,84,128,.35)' } }
+        };
+        const currentSkin = () => SKINS[localStorage.getItem(SKIN_KEY)] ? localStorage.getItem(SKIN_KEY) : '';
+        function applySkin(id, save=true){
+            const skin = SKINS[id] ? id : '';
+            if(save){ if(skin) localStorage.setItem(SKIN_KEY, skin); else localStorage.removeItem(SKIN_KEY); }
+            document.querySelectorAll('[data-skin-choice]').forEach(b => b.classList.toggle('active', b.dataset.skinChoice === skin));
+            if(skin){
+                document.documentElement.dataset.skin = skin;
+                applyTheme(SKINS[skin].base, false);
+            } else {
+                delete document.documentElement.dataset.skin;
+                const saved = localStorage.getItem(THEME_KEY);
+                applyTheme(['dark','light','aero'].includes(saved) ? saved : 'light', false);
+            }
+            applyPalette(localStorage.getItem(ACCENT_KEY)||DEFAULT_ACCENT, false);
+        }
         function applyTheme(value, save=true){
+            if(save && currentSkin()){ localStorage.removeItem(SKIN_KEY); delete document.documentElement.dataset.skin; document.querySelectorAll('[data-skin-choice]').forEach(b => b.classList.toggle('active', b.dataset.skinChoice === '')); }
             const theme=['dark','light','aero'].includes(value) ? value : 'light';
             document.documentElement.dataset.theme=theme;
-            document.querySelectorAll('[data-theme-choice]').forEach(button => button.classList.toggle('active',button.dataset.themeChoice===theme));
+            document.querySelectorAll('[data-theme-choice]').forEach(button => button.classList.toggle('active',button.dataset.themeChoice===theme && !document.documentElement.dataset.skin));
             if(save) localStorage.setItem(THEME_KEY,theme);
         }
         function applyPalette(value, save=true){
+            if(save && currentSkin()){ localStorage.removeItem(SKIN_KEY); delete document.documentElement.dataset.skin; document.querySelectorAll('[data-skin-choice]').forEach(b => b.classList.toggle('active', b.dataset.skinChoice === '')); }
+            const skinNow = currentSkin();
             const preset=presetFor(value);
-            if(preset.scheme==='pantone'){
+            if(skinNow){ /* тему держит скин */ }
+            else if(preset.scheme==='pantone'){
                 if(!['light','aero'].includes(document.documentElement.dataset.theme)) applyTheme('light');
             } else if(preset.scheme==='custom'){
                 if(document.documentElement.dataset.theme!=='aero') applyTheme(customIsLight()?'light':'dark');
@@ -1522,7 +1645,11 @@
             if(preset.scheme==='custom') { const isLight=customIsLight(), toward=isLight?'#000000':'#ffffff', text=isLight?'#151515':'#f1f1f1'; Object.entries({'--bg':customPalette.background,'--panel':customPalette.panel,'--border':mix(customPalette.panel,toward,isLight?.16:.14),'--text':text,'--muted':mix(text,customPalette.background,.43),'--surface-0':mix(customPalette.background,customPalette.panel,.38),'--surface-1':customPalette.panel,'--surface-2':mix(customPalette.panel,toward,.04),'--surface-3':mix(customPalette.panel,toward,.09),'--surface-4':mix(customPalette.panel,toward,.15)}).forEach(([key,val])=>set(key,val)); }
             if(document.documentElement.dataset.theme==='aero') Object.entries({'--bg':'#bcecff','--panel':'#f7feff','--border':'#70bdd2','--text':'#143747','--muted':'#537783','--surface-0':'#dff8ff','--surface-1':'#f4fdff','--surface-2':'#cceff7','--surface-3':'#afe4ef','--surface-4':'#8bd7e6'}).forEach(([key,val])=>set(key,val));
             document.documentElement.dataset.colorScheme=preset.scheme||'tinted';
-            document.getElementById('palette-current').textContent=preset.name;
+            if(skinNow){
+                Object.entries(SKINS[skinNow].vars).forEach(([key,val])=>set(key,val));
+                document.documentElement.dataset.colorScheme='skin';
+            }
+            document.getElementById('palette-current').textContent=skinNow ? 'скин: ' + document.querySelector(`[data-skin-choice="${skinNow}"]`).textContent : preset.name;
             document.querySelectorAll('.palette-swatch').forEach(button=>button.classList.toggle('active',button.dataset.accentId===preset.id));
             document.getElementById('custom-palette').classList.toggle('active',preset.id==='custom');
             if(save) localStorage.setItem(ACCENT_KEY,preset.id);
@@ -1540,6 +1667,7 @@
         const swatches=document.getElementById('palette-swatches');
         ACCENT_PRESETS.forEach(preset=>{ const button=document.createElement('button');button.type='button';button.className='palette-swatch';button.dataset.accentId=preset.id;button.title=preset.name;button.style.setProperty('--swatch',preset.preview||preset.color);button.innerHTML=preset.code?`<span>${preset.code}</span>`:'';button.addEventListener('click',()=>applyPalette(preset.id));swatches.appendChild(button); });
         document.querySelectorAll('[data-theme-choice]').forEach(button=>button.addEventListener('click',()=>{applyTheme(button.dataset.themeChoice);applyPalette(localStorage.getItem(ACCENT_KEY)||DEFAULT_ACCENT,false);}));
+        document.querySelectorAll('[data-skin-choice]').forEach(button=>button.addEventListener('click',()=>applySkin(button.dataset.skinChoice)));
         ['accent','background','panel'].forEach(key=>{ const picker=document.getElementById(`custom-${key}`),text=document.getElementById(`custom-${key}-hex`);picker.addEventListener('input',()=>updateCustom(key,picker.value));text.addEventListener('input',()=>updateCustom(key,text.value));text.addEventListener('focus',()=>text.select()); });
         document.getElementById('palette-key').addEventListener('input',event=>{ const parsed=parsePaletteKey(event.target.value);if(!parsed)return;customPalette=parsed;localStorage.setItem(CUSTOM_PALETTE_KEY,JSON.stringify(customPalette));syncCustom();applyPalette('custom');document.getElementById('palette-status').textContent='Палитра применена'; });
         document.getElementById('palette-apply').addEventListener('click',()=>{ const parsed=parsePaletteKey(document.getElementById('palette-key').value);if(!parsed){document.getElementById('palette-status').textContent='Неверный ключ';return;}customPalette=parsed;localStorage.setItem(CUSTOM_PALETTE_KEY,JSON.stringify(customPalette));syncCustom();applyPalette('custom'); });
@@ -1548,6 +1676,8 @@
         syncCustom();
         applyTheme(['dark','light','aero'].includes(localStorage.getItem(THEME_KEY))?localStorage.getItem(THEME_KEY):'light',false);
         applyPalette(localStorage.getItem(ACCENT_KEY)||DEFAULT_ACCENT,false);
+        if(currentSkin()) applySkin(currentSkin(), false);
+        else document.querySelectorAll('[data-skin-choice]').forEach(b => b.classList.toggle('active', b.dataset.skinChoice === ''));
         if(localStorage.getItem(ACCENT_KEY)==='custom') document.getElementById('custom-palette').open=true;
         let selectedReply = null;
         let selectedMention = null;
@@ -1840,6 +1970,7 @@
         document.getElementById('settings-toggle').addEventListener('click', () => settingsPanel.classList.toggle('open'));
         document.getElementById('clear-chat').addEventListener('click', () => {
             chat.innerHTML = '';
+            olderRows.length = 0;
             seenIds.clear();
             history.length = 0;
             total = 0;
@@ -1983,8 +2114,42 @@
             chat.scrollTop = chat.scrollHeight;
             updateStaleBanner();
         });
-        chat.addEventListener('scroll',()=>{ paused = chat.scrollHeight-(chat.scrollTop+chat.clientHeight) > 250; updateStaleBanner(); });
+        chat.addEventListener('scroll',()=>{
+            paused = chat.scrollHeight-(chat.scrollTop+chat.clientHeight) > 250;
+            updateStaleBanner();
+            if(chat.scrollTop < 120) showOlder();
+            else if(!paused) trimFeed();
+        });
         const scroll=()=>{ if(!paused) chat.scrollTop=chat.scrollHeight; };
+
+        // Прокрутка вверх подгружает старые сообщения: в ленте внизу держим MAX строк,
+        // вытесненные лежат в памяти (всего не больше FEED_SCROLLBACK) и возвращаются, когда листаешь вверх.
+        const FEED_SCROLLBACK = 1000;
+        const olderRows = [];   // вытесненные строки, старые первыми
+        function trimFeed(){
+            // пока человек читает выше (лента на паузе), строки не трогаем — иначе текст уедет из-под глаз
+            const keep = paused ? FEED_SCROLLBACK : MAX;
+            while(chat.children.length > keep) olderRows.push(chat.removeChild(chat.firstChild));
+            const room = FEED_SCROLLBACK - chat.children.length;
+            if(olderRows.length > room) olderRows.splice(0, olderRows.length - Math.max(0, room));
+        }
+        function showOlder(){
+            if(!olderRows.length) return;
+            const batch = olderRows.splice(Math.max(0, olderRows.length - 50));
+            const fragment = document.createDocumentFragment();
+            batch.forEach(row => {
+                // пока строка лежала в памяти, могли поменять имя, выделение или «ждём ответа»
+                row.querySelectorAll('.name[data-name],.mention[data-name],.reply-name[data-name],.mod-name[data-name]').forEach(applyAliasToElement);
+                applyWaitingClass(row);
+                applyHighlightClass(row);
+                fragment.appendChild(row);
+            });
+            const before = chat.scrollHeight, top = chat.scrollTop;
+            chat.style.scrollBehavior = 'auto';
+            chat.insertBefore(fragment, chat.firstChild);
+            chat.scrollTop = top + (chat.scrollHeight - before); // текст на экране остаётся на месте
+            chat.style.scrollBehavior = '';
+        }
 
         // [emote:ID:NAME] -> img (Kick); ссылки и @ — подсветка
         function kickContent(content){
@@ -2147,7 +2312,7 @@
                 seenModEvents.set(key, item);
                 rememberFeedMsg(msg);
                 chat.appendChild(div);
-                while(chat.children.length>MAX) chat.removeChild(chat.firstChild);
+                trimFeed();
                 scroll();
                 return;
             }
@@ -2234,7 +2399,7 @@
             history.push({ platform: msg.platform, name: msg.name, color, html: body, reply: reply, ts: Number(div.dataset.sentAt) || Date.now() });
             while(history.length>HIST_CAP) history.shift();
 
-            while(chat.children.length>MAX) chat.removeChild(chat.firstChild);
+            trimFeed();
             scroll();
         }
 
@@ -2382,6 +2547,7 @@
                 delete go.dataset.uact; delete go.dataset.min;
             });
         }
+        const HISTORY_LIMIT = 1000; // сообщений в одном окне истории
         function histTime(raw){
             let d = null;
             if(raw !== undefined && raw !== null && raw !== ''){
@@ -2600,6 +2766,7 @@
             const load = async () => {
                 if(loading || done || usedCursors.has(cursor)) return;
                 loading = true;
+                let ok = false;
                 more.textContent = 'Загрузка…';
                 try{
                     let userId = more.dataset.uid;
@@ -2622,14 +2789,17 @@
                         done = true;
                         if(!loaded) wrap.innerHTML = '<div class="empty">Сообщений нет — или Kick их не отдал</div>';
                     } else {
-                        wrap.insertAdjacentHTML('beforeend', messages.map(m => kickHistoryRow(m, name)).join(''));
+                        const take = messages.slice(0, HISTORY_LIMIT - loaded);
+                        wrap.insertAdjacentHTML('beforeend', take.map(m => kickHistoryRow(m, name)).join(''));
                         histMarkDays(wrap);
-                        loaded += messages.length;
+                        loaded += take.length;
                         const next = pickNextCursor(data, messages);
                         if(!next || next === cursor) done = true;
                         else cursor = next;
                     }
-                    meta.textContent = `Kick · сообщений: ${loaded}${done ? ' · это все' : ''}`;
+                    if(loaded >= HISTORY_LIMIT) done = true;
+                    meta.textContent = `Kick · сообщений: ${loaded}${loaded >= HISTORY_LIMIT ? ` из ${HISTORY_LIMIT} — больше окно не держит` : done ? ' · это все' : ''}`;
+                    ok = true;
                     more.hidden = done;
                 }catch(err){
                     console.error('history error', err);
@@ -2638,7 +2808,11 @@
                     more.textContent = 'Повторить';
                 }finally{
                     loading = false;
-                    if(!done) more.textContent = 'Ещё';
+                    if(ok && !done){
+                        more.textContent = 'Ещё';
+                        // окно ещё не заполнено до прокрутки — подгружаем следующую порцию сами
+                        if(!w.closed && w.document.body.scrollHeight <= w.innerHeight + 260) setTimeout(load, 250);
+                    }
                 }
             };
             more.addEventListener('click', load);
@@ -2739,6 +2913,7 @@
             const load = async () => {
                 if(loading || done || used.has(after)) return;
                 loading = true;
+                let ok = false;
                 more.textContent = 'Загрузка…';
                 try{
                     const url = `https://api.live.vkvideo.ru/v1/blog/${KICK_SLUG}/public_video_stream/chat/user/${encodeURIComponent(userId)}${after ? '?after=' + encodeURIComponent(after) : ''}`;
@@ -2750,16 +2925,19 @@
                         done = true;
                         if(!loaded) wrap.innerHTML = '<div class="empty">Сообщений нет — или VK их не отдал</div>';
                     } else {
-                        wrap.insertAdjacentHTML('beforeend', messages.map(m => vkHistoryRow(m, name)).join(''));
+                        const take = messages.slice(0, HISTORY_LIMIT - loaded);
+                        wrap.insertAdjacentHTML('beforeend', take.map(m => vkHistoryRow(m, name)).join(''));
                         histMarkDays(wrap);
-                        loaded += messages.length;
+                        loaded += take.length;
                         const last = messages[messages.length - 1] || {};
                         const lastMsg = (last?.type === 'message' && last?.data && typeof last.data === 'object') ? last.data : (last?.message && typeof last.message === 'object' ? last.message : last);
                         const next = lastMsg.id || lastMsg.message_id || last.id || last.message_id || data?.next_after || data?.after || '';
                         if(!next || String(next) === String(after)) done = true;
                         else after = String(next);
                     }
-                    meta.textContent = `VK · сообщений: ${loaded}${done ? ' · это все' : ''}`;
+                    if(loaded >= HISTORY_LIMIT) done = true;
+                    meta.textContent = `VK · сообщений: ${loaded}${loaded >= HISTORY_LIMIT ? ` из ${HISTORY_LIMIT} — больше окно не держит` : done ? ' · это все' : ''}`;
+                    ok = true;
                     more.hidden = done;
                 }catch(err){
                     console.error('vk history error', err);
@@ -2768,7 +2946,11 @@
                     more.textContent = 'Повторить';
                 }finally{
                     loading = false;
-                    if(!done) more.textContent = 'Ещё';
+                    if(ok && !done){
+                        more.textContent = 'Ещё';
+                        // окно ещё не заполнено до прокрутки — подгружаем следующую порцию сами
+                        if(!w.closed && w.document.body.scrollHeight <= w.innerHeight + 260) setTimeout(load, 250);
+                    }
                 }
             };
             more.addEventListener('click', load);
@@ -2817,7 +2999,13 @@
             const alias = getLocalAlias(platform, name, userId);
             const waiting = isWaiting(platform, name, userId);
             const highlight = getUserHighlight(platform, name, userId);
-            const HL_COLORS = ['#ffd700','#ff5c5c','#53fc18','#3a8bfd','#e542ff','#00bcd4'];
+            // яркие цвета выделения по кругу оттенков: две строки по 9
+            const HL_COLORS = [
+                ['#ff2e63','малиновый'], ['#ff5c5c','красный'], ['#ff7a00','оранжевый'], ['#ffd700','золотой'], ['#ffea00','лимонный'],
+                ['#c6ff00','лайм'], ['#53fc18','кислотный'], ['#00ff9c','неоновая мята'], ['#00e5ff','электрик'],
+                ['#00bcd4','бирюзовый'], ['#3a8bfd','синий'], ['#1e3cff','ультрамарин'], ['#7c4dff','фиолетовый'], ['#b388ff','лавандовый'],
+                ['#e542ff','пурпурный'], ['#ff6fff','ультрарозовый'], ['#ff1493','ярко-розовый'], ['#ff80ab','сахарная вата']
+            ];
             nickMenu = document.createElement('div');
             nickMenu.className = 'nick-menu';
             nickMenu.dataset.plat = platform;
@@ -2841,10 +3029,11 @@
                 + (alias ? item('rename-reset', NM_ICON.reset, 'Вернуть настоящий ник') : '')
                 + item('history', NM_ICON.history, 'История и модерация')
                 + `<div class="nm-sep"></div>`
-                + `<div class="nm-hl" title="Выделять все сообщения этого человека">${NM_ICON.highlight}<span class="nm-hl-label">Выделить</span><span class="nm-hl-dots">`
-                    + HL_COLORS.map(c => `<button class="nm-hl-dot${highlight === c ? ' on' : ''}" data-nm="hl" data-color="${c}" style="--c:${c}" title="${c}"></button>`).join('')
-                    + (highlight ? `<button class="nm-hl-off" data-nm="hl-off" title="Снять выделение">✕</button>` : '')
-                + `</span></div>`
+                + `<div class="nm-hl" title="Выделять все сообщения этого человека">${NM_ICON.highlight}<span class="nm-hl-label">Выделить</span>`
+                    + (highlight ? `<button class="nm-hl-off" data-nm="hl-off" title="Снять выделение">Снять</button>` : '')
+                + `</div><div class="nm-hl-dots">`
+                    + HL_COLORS.map(([c, label]) => `<button class="nm-hl-dot${String(highlight).toLowerCase() === c ? ' on' : ''}" data-nm="hl" data-color="${c}" style="--c:${c}" title="${label}" aria-label="${label}"></button>`).join('')
+                + `</div>`
                 + item('wait', waiting ? NM_ICON.done : NM_ICON.wait, waiting ? 'Снять ожидание' : 'Ждём ответа', ' nm-wait' + (waiting ? ' on' : ''));
             document.body.appendChild(nickMenu);
             // клавиатура: ↑/↓ по пунктам, Enter — выбрать, Esc — закрыть
