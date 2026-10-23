@@ -1,6 +1,6 @@
 {
-  "version": "6.51",
-  "notes": "Скины (розовый гламур, неон, матрица, люкс, сакура); 18 ярких цветов выделения; прокрутка вверх подгружает ленту до 1000 сообщений; окна истории до 1000",
+  "version": "6.52",
+  "notes": "Полоску «Вышла версия» можно скрыть до следующей версии",
   "files": [
     {
       "path": "background.js",
@@ -9,7 +9,7 @@
     },
     {
       "path": "chat.js",
-      "sha256": "729500fe31a74eea3a510e23ed0cc723cdbdeebbbd729f1cee6c91765ff82bf4",
+      "sha256": "e080c70d5f29b818accf72586418461aba96a3d1040aeb5b99b98d112cae771e",
       "size": 315276
     },
     {
@@ -19,8 +19,8 @@
     },
     {
       "path": "ext-ui.js",
-      "sha256": "6690c30114a3f8014c513dfc8260ffbd520dcf8ed5e6e07298b04d7a02f94a41",
-      "size": 20278
+      "sha256": "3bbfd4aea5858cd5e32fc3e2d392028d5d5ba70fd354a6c7ef951c5acb5a5ae6",
+      "size": 21348
     },
     {
       "path": "gm-shim.js",
@@ -49,7 +49,7 @@
     },
     {
       "path": "manifest.json",
-      "sha256": "7ccf27cec412d9def41cc0ef7d07c8a84147b61f1f45075de68aadbc47fc369f",
+      "sha256": "fc94048a02cf7e5a8970068d20d9b1bfd73cfaf49ee5238606f649d28b620397",
       "size": 2112
     },
     {
