@@ -1,6 +1,6 @@
 {
-  "version": "6.48",
-  "notes": "Перенос переименований из Tampermonkey; предупреждение о старом скрипте; иконки крупнее",
+  "version": "6.49",
+  "notes": "Обновление не ломается, если мешает Защитник Windows: откат и подсказка",
   "files": [
     {
       "path": "background.js",
@@ -9,7 +9,7 @@
     },
     {
       "path": "chat.js",
-      "sha256": "8877a8a4958e7044090a0213a923ee1a06dff13a608c6f1296d9250f314fd664",
+      "sha256": "b65e9432f94a0cef46c604d466a2ae0a70653fc9a053a92d1f81c67591e0e02b",
       "size": 297727
     },
     {
@@ -49,7 +49,7 @@
     },
     {
       "path": "manifest.json",
-      "sha256": "a69960c2b6129d5667f22c8caedeac85752022127be17254fb9c689d92343b4c",
+      "sha256": "ecef57fe964bc020b30fb7bb2cf19e6b0f236209a6ad3edf85ddf7663d5642d3",
       "size": 2112
     },
     {
@@ -94,18 +94,18 @@
     },
     {
       "path": "ui.css",
-      "sha256": "041ea9a59b5276b99f56052fe4c167463a49b8b1c272d226c127d76758800b4f",
-      "size": 7103
+      "sha256": "290f071f28010526086694727f85a5bb3ba48e14658a323b2a04794d29cfc179",
+      "size": 7334
     },
     {
       "path": "updater.html",
-      "sha256": "ece599163bda155790e803624e0e0341473eeca143001efaec287ac9e93aee43",
-      "size": 2036
+      "sha256": "37325928162066ee8aec35c8158ec820f585f09cba950e2d483baf4c26e90b07",
+      "size": 2082
     },
     {
       "path": "updater.js",
-      "sha256": "c2d205c2811332d6e5f65b3eee2ed6aa80347c1193e4a03d1b98da43d8fb9d14",
-      "size": 10154
+      "sha256": "a22d6b0a896e6446ee3c95faa5ee8c5c2812f5b4e0fad79793f3840f9d689226",
+      "size": 15409
     }
   ]
 }

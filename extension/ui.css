@@ -10,6 +10,7 @@
   --ok:#3aa655;--wait:#d49a1e;--bad:#d24545
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--text);font:12px/1.45 Inter,system-ui,Arial,sans-serif}
 @keyframes breathe{50%{opacity:.35}}
 @keyframes open{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
@@ -80,6 +81,10 @@ details>summary:hover{color:var(--text)}
 .sheet section{margin-top:12px}
 .status{min-height:1.4em;font-weight:700;margin:8px 0 0}
 .status.bad{color:var(--bad)}
+.help{margin-top:8px;padding:9px 11px;border:1px solid rgba(210,69,69,.35);border-radius:8px;background:rgba(210,69,69,.07);font-size:12px;animation:open .16s ease-out}
+.help b{display:block;margin-bottom:4px}
+.help ol{margin:4px 0 6px}
+.help .note{margin-top:4px;word-break:break-word}
 .bar{height:6px;margin-top:10px;border:1px solid var(--border);border-radius:4px;background:var(--surface-2);overflow:hidden}
 .bar>i{display:block;height:100%;width:0;background:var(--accent);transition:width .25s ease-out}
 .done{display:flex;align-items:center;gap:8px;margin-top:10px;font-weight:700;color:var(--ok);animation:open .16s ease-out}

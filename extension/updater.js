@@ -108,6 +108,43 @@ async function writeFile(root, path, buf) {
     await w.close();
 }
 
+async function readFile(root, path) {
+    const parts = path.split('/');
+    const name = parts.pop();
+    try {
+        let dir = root;
+        for (const p of parts) dir = await dir.getDirectoryHandle(p);
+        return await (await (await dir.getFileHandle(name)).getFile()).arrayBuffer();
+    } catch (e) { return null; } // файла нет
+}
+
+// Запись не прошла — почти всегда это Защитник Windows. Объясняем по-человечески, что нажать.
+class WriteBlocked extends Error {
+    constructor(path, cause, removed) {
+        super(`Не удалось записать ${path}`);
+        this.path = path; this.cause = cause; this.removed = removed;
+    }
+}
+function showWriteHelp(err) {
+    const tech = err.cause ? `${err.cause.name || ''} ${err.cause.message || err.cause}`.trim() : '';
+    $('help').innerHTML = `<b>${err.removed
+        ? `Файл ${esc(err.path)} записался, но сразу пропал — его убрал антивирус.`
+        : `Windows не дал записать ${esc(err.path)}.`} Расширение осталось на старой версии, ничего не сломано.</b>`
+        + 'Почти всегда это Защитник Windows. Что сделать:'
+        + '<ol>'
+        + '<li><b>Папка в «Документах», на «Рабочем столе» или в «Загрузках»?</b> Там её охраняет «Контролируемый доступ к папкам». '
+        + 'Проще всего перенести папку расширения, например в <code>C:\\MergedChat</code>, в <code>chrome://extensions</code> удалить расширение и «Загрузить распакованное» уже оттуда '
+        + '(переименования сохранить заранее: значок → «Настройки» → «Перенос и запасная копия»). '
+        + 'Или оставить как есть: «Безопасность Windows» → «Защита от вирусов и угроз» → «Защита от программ-шантажистов» → '
+        + '«Разрешить работу приложения через контролируемый доступ к папкам» → добавить <code>chrome.exe</code>.</li>'
+        + '<li><b>Защитник показал «Обнаружены угрозы»?</b> Это ложное срабатывание на код чата (он перехватывает сообщения и токены сайтов — так и задумано). '
+        + '«Безопасность Windows» → «Журнал защиты» → запись → «Разрешить», и добавить папку расширения в исключения: '
+        + '«Параметры защиты от вирусов и угроз» → «Исключения» → «Добавить исключение» → «Папка».</li>'
+        + '</ol>Потом нажми «Обновить» ещё раз.'
+        + (tech ? `<div class="note">Техническая причина: ${esc(tech)}</div>` : '');
+    $('help').hidden = false;
+}
+
 async function removeFile(root, path) {
     const parts = path.split('/');
     const name = parts.pop();
@@ -139,10 +176,42 @@ async function apply(dir) {
     const newManifest = JSON.parse(new TextDecoder().decode(downloaded.find(f => f.path === 'manifest.json')?.buf || new ArrayBuffer(0)) || '{}');
     if (newManifest.name !== running.name) throw new Error('В обновлении чужой manifest.json — отменено');
 
+    // пробная запись: если Windows не пускает в папку, узнаём до того, как тронем настоящие файлы
+    status('Проверяю, можно ли писать в папку…');
+    const probe = '_mc_write_test.tmp';
+    try {
+        const bytes = new TextEncoder().encode('merged-chat ' + Date.now());
+        await writeFile(dir, probe, bytes);
+        const back = await readFile(dir, probe);
+        if (!back) throw new WriteBlocked(probe, null, true);
+    } catch (e) {
+        throw e instanceof WriteBlocked ? e : new WriteBlocked('файлы в папку расширения', e, false);
+    } finally {
+        await removeFile(dir, probe);
+    }
+
+    // старые версии файлов — в память: если запись сорвётся на середине, вернём всё как было
     status('Записываю файлы…');
-    for (const f of downloaded) {
-        await writeFile(dir, f.path, f.buf);
-        progress(++step, total);
+    const backup = new Map();
+    for (const f of downloaded) backup.set(f.path, await readFile(dir, f.path));
+    const written = [];
+    try {
+        for (const f of downloaded) {
+            try { await writeFile(dir, f.path, f.buf); }
+            catch (e) { throw new WriteBlocked(f.path, e, false); }
+            written.push(f.path);
+            // сверка: антивирус мог удалить или обнулить файл сразу после записи
+            const back = await readFile(dir, f.path);
+            if (!back || await sha256(back) !== await sha256(f.buf)) throw new WriteBlocked(f.path, null, true);
+            progress(++step, total);
+        }
+    } catch (e) {
+        status('Возвращаю прежние файлы…');
+        for (const path of written.reverse()) {
+            const old = backup.get(path);
+            try { if (old) await writeFile(dir, path, old); else await removeFile(dir, path); } catch (err) { /* что смогли */ }
+        }
+        throw e;
     }
     for (const p of info.remove || []) await removeFile(dir, safePath(p));
 
@@ -155,6 +224,7 @@ async function apply(dir) {
 
 async function run() {
     $('go').disabled = true;
+    $('help').hidden = true;
     try {
         let dir = await getDir();
         if (!dir) dir = await pickFolder();
@@ -169,6 +239,7 @@ async function run() {
         await apply(dir);
     } catch (e) {
         if (e && e.name === 'AbortError') status('Папка не выбрана', true);
+        else if (e instanceof WriteBlocked) { status('Обновление не записалось', true); showWriteHelp(e); }
         else status(String(e && e.message || e), true);
         $('go').disabled = false;
     }
