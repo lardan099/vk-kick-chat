@@ -77,6 +77,9 @@
             #mcx-update b{font-weight:700}
             #mcx-update u{margin-left:auto;text-decoration:none;font-weight:700;border:1px solid currentColor;border-radius:4px;padding:1px 7px;opacity:.9}
             #mcx-update:hover u{opacity:1;background:rgba(255,255,255,.14)}
+            #mcx-update .mcx-hide{width:22px;height:22px;display:grid;place-items:center;padding:0;border:0;border-radius:5px;background:transparent;
+                color:inherit;font-size:13px;line-height:1;cursor:pointer;opacity:.75;transition:opacity .12s,background-color .12s}
+            #mcx-update .mcx-hide:hover{opacity:1;background:rgba(255,255,255,.18)}
 
             #mcx-toast{position:fixed;left:50%;top:calc(var(--bar-h) + 8px);transform:translateX(-50%);z-index:999996;padding:6px 12px;width:max-content;max-width:calc(100vw - 24px);
                 border:1px solid var(--border,#444);border-radius:6px;background:var(--panel,#181a1b);color:var(--text,#eee);font-size:12px;
@@ -155,14 +158,24 @@
                 </div>
                 <div class="mcx-note">${note}</div>`;
 
-            if (upd && upd.available) {
-                banner.innerHTML = `<span>Вышла версия <b>${esc(upd.latest)}</b></span><u>Обновить</u>`;
+            // полоску можно скрыть: она не вернётся до следующей версии (в панели «Фон» обновление остаётся)
+            if (upd && upd.available && GM_getValue('ext_update_hidden', '') !== upd.latest) {
+                banner.innerHTML = `<span>Вышла версия <b>${esc(upd.latest)}</b></span><u>Обновить</u>`
+                    + `<button class="mcx-hide" title="Скрыть до следующей версии" aria-label="Скрыть">✕</button>`;
                 banner.classList.add('show');
             } else banner.classList.remove('show');
         }
 
         const install = () => MC_EXT.send('update:open', { auto: true }).catch(() => { });
-        banner.addEventListener('click', install);
+        banner.addEventListener('click', e => {
+            if (e.target.closest('.mcx-hide')) {
+                const upd = GM_getValue('ext_update', null);
+                if (upd && upd.latest) GM_setValue('ext_update_hidden', upd.latest);
+                banner.classList.remove('show');
+                return;
+            }
+            install();
+        });
 
         const openPanel = open => {
             panel.classList.toggle('open', open);
