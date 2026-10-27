@@ -1,6 +1,6 @@
 {
-  "version": "6.57",
-  "notes": "Подписки: вставка из буфера сама при открытии, видно прошлые выдачи",
+  "version": "6.58",
+  "notes": "Скин «Люкс» — PANTONE 7506 в тёмной теме, как на сайте",
   "files": [
     {
       "path": "background.js",
@@ -9,8 +9,8 @@
     },
     {
       "path": "chat.js",
-      "sha256": "9ad1c08e66361633a60d86709dd00e0f45958f00d8f711f96be6e77bc08432ce",
-      "size": 319453
+      "sha256": "2f665fa0e62504e07a6b6b113b990a71f8669292bc81b2b85b087c8d871e42eb",
+      "size": 320446
     },
     {
       "path": "config.js",
@@ -64,7 +64,7 @@
     },
     {
       "path": "manifest.json",
-      "sha256": "6ff4ffaef9e675b68e18b1d40e25b23e54a2a6915dea4df3b92cb6f85a904a7b",
+      "sha256": "095f3c5d54f4a0d894d1aeb1dd4c34d0cd8e0ee536bd40f10624a0e1b93b1f08",
       "size": 2226
     },
     {

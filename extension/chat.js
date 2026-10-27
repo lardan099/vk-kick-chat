@@ -6,7 +6,7 @@ if (MC_EXT.skip) return;
 // ==UserScript==
 // @name         Merged Chat (Kick + VK Play Live)
 // @namespace    grpzdc.mergedchat
-// @version      6.57
+// @version      6.58
 // @description  Перехватывает WebSocket реальных чатов Kick и VK Play Live, собирает все сообщения и рисует единую ленту своим дизайном. Сохраняет весь функционал родных чатов (авторизация, бан и т.д.).
 // @match        https://kick.com/popout/*/chat*
 // @match        https://dashboard.kick.com/*
@@ -1408,14 +1408,23 @@ if (MC_EXT.skip) return;
             html[data-skin="matrix"] #composer{background:#000;border-top:1px solid #0f3d17}
             html[data-skin="matrix"] #message-input{font-family:inherit}
 
-            /* люкс: чёрное с золотом */
-            html[data-skin="lux"] body{background:radial-gradient(ellipse at 50% 0%,#231b0d 0%,#0c0a07 65%);background-attachment:fixed}
-            html[data-skin="lux"] #bar{background:linear-gradient(180deg,#1c160c,#0f0c07);border-bottom:1px solid #d4af37;box-shadow:0 1px 0 rgba(240,207,93,.25)}
-            html[data-skin="lux"] #st{font-family:Georgia,'Times New Roman',serif;letter-spacing:.14em;
-                background:linear-gradient(180deg,#fbe9a7,#d4af37 55%,#9c7c1c);-webkit-background-clip:text;background-clip:text;color:transparent}
-            html[data-skin="lux"] #send-message{background:linear-gradient(180deg,#f0cf5d,#c79a22);border-color:#9c7c1c;color:#1a1408}
-            html[data-skin="lux"] #composer{background:#0f0c07;border-top:1px solid #4a3b1c}
-            html[data-skin="lux"] :where(.msg:not(.awaiting):not(.reply-to-me):not(.reply-target)):hover{background:rgba(212,175,55,.07)}
+            /* люкс: PANTONE 7506 в тёмной теме — как на pzdcflix (тёплый графит, кремовый акцент 7506) */
+            html[data-skin="lux"] body{background:#0f0e0c}
+            html[data-skin="lux"] #bar{background:#171512;border-bottom:1px solid rgba(239,219,178,.08)}
+            html[data-skin="lux"] #st{color:#f2ece1;font-weight:820;letter-spacing:-.02em}
+            html[data-skin="lux"] #dot{background:#7bc47f;box-shadow:none}
+            html[data-skin="lux"] .bar-btn{background:#1e1b17;border-color:#2c2822;border-radius:9px;color:#f2ece1}
+            html[data-skin="lux"] .bar-btn:hover{background:#27231e}
+            html[data-skin="lux"] #composer{background:#0f0e0c;border-top:1px solid rgba(239,219,178,.08)}
+            html[data-skin="lux"] #message-input{background:#171512;border-color:#2c2822;border-radius:12px}
+            html[data-skin="lux"] #message-input:focus{border-color:rgba(239,219,178,.45);outline:none}
+            html[data-skin="lux"] #send-message{background:#efdbb2;border-color:#efdbb2;color:#1b170f;border-radius:9px;font-weight:800}
+            html[data-skin="lux"] #send-message:hover{background:#f6e7c8}
+            html[data-skin="lux"] .msg{border-radius:9px}
+            html[data-skin="lux"] :where(.msg:not(.awaiting):not(.reply-to-me):not(.reply-target)):hover{background:#171512}
+            html[data-skin="lux"] .nick-menu,html[data-skin="lux"] .timeout-pop,html[data-skin="lux"] #emote-picker,
+            html[data-skin="lux"] .send-choice,html[data-skin="lux"] .template-menu,html[data-skin="lux"] #mention-suggest{
+                background:#171512;border-color:#2c2822;border-radius:12px;box-shadow:0 1px 2px rgb(0 0 0/.3),0 10px 30px rgb(0 0 0/.35)}
 
             /* сакура: светлая, лепестки по фону */
             html[data-skin="sakura"] body{background:
@@ -1468,7 +1477,7 @@ if (MC_EXT.skip) return;
                         <button type="button" class="theme-choice skin-choice" data-skin-choice="glam" style="--sw:linear-gradient(135deg,#ff5cae,#ffc4e1)">Розовый гламур</button>
                         <button type="button" class="theme-choice skin-choice" data-skin-choice="neon" style="--sw:linear-gradient(135deg,#ff2bd6,#00f0ff)">Неон</button>
                         <button type="button" class="theme-choice skin-choice" data-skin-choice="matrix" style="--sw:linear-gradient(135deg,#00ff41,#003b10)">Матрица</button>
-                        <button type="button" class="theme-choice skin-choice" data-skin-choice="lux" style="--sw:linear-gradient(135deg,#f0cf5d,#7a5c12)">Люкс</button>
+                        <button type="button" class="theme-choice skin-choice" data-skin-choice="lux" style="--sw:linear-gradient(135deg,#efdbb2 50%,#171512 50%)" title="PANTONE 7506 в тёмной теме, как на pzdcflix">Люкс</button>
                         <button type="button" class="theme-choice skin-choice" data-skin-choice="sakura" style="--sw:linear-gradient(135deg,#f07a9c,#fde8ee)">Сакура</button>
                     </div>
                     <div class="palette-head"><strong>Палитра</strong><output id="palette-current">PANTONE 7506 C · светлая</output></div>
@@ -1615,10 +1624,11 @@ if (MC_EXT.skip) return;
                 '--surface-0':'#010601','--surface-1':'#031005','--surface-2':'#051a08','--surface-3':'#08260c','--surface-4':'#0c3412',
                 '--accent':'#00ff41','--accent-bright':'#5cff7f','--accent-dark':'#00b32d','--accent-contrast':'#001a07','--accent-rgb':'0 255 65',
                 '--accent-soft':'rgba(0,255,65,.1)','--accent-medium':'rgba(0,255,65,.2)','--accent-strong':'rgba(0,255,65,.42)','--pz-glow':'rgba(0,255,65,.5)' } },
-            lux: { base:'dark', vars:{ '--bg':'#0c0a07','--panel':'#15110a','--border':'#4a3b1c','--text':'#f5ecd6','--muted':'#b39b6a',
-                '--surface-0':'#0f0c08','--surface-1':'#17130b','--surface-2':'#1f190e','--surface-3':'#2b2312','--surface-4':'#382d17',
-                '--accent':'#d4af37','--accent-bright':'#f0cf5d','--accent-dark':'#9c7c1c','--accent-contrast':'#1a1408','--accent-rgb':'212 175 55',
-                '--accent-soft':'rgba(212,175,55,.12)','--accent-medium':'rgba(212,175,55,.22)','--accent-strong':'rgba(212,175,55,.48)','--pz-glow':'rgba(212,175,55,.4)' } },
+            // тёмная редакция PANTONE 7506 с сайта (pz-palette.js, схема heritage)
+            lux: { base:'dark', vars:{ '--bg':'#0f0e0c','--panel':'#171512','--border':'#2c2822','--text':'#f2ece1','--muted':'#a69d8d',
+                '--surface-0':'#121110','--surface-1':'#171512','--surface-2':'#1e1b17','--surface-3':'#27231e','--surface-4':'#322d26',
+                '--accent':'#efdbb2','--accent-bright':'hsl(40 65% 88%)','--accent-dark':'hsl(40 39% 54%)','--accent-contrast':'#1b170f','--accent-rgb':'239 219 178',
+                '--accent-soft':'rgba(239,219,178,.12)','--accent-medium':'rgba(239,219,178,.22)','--accent-strong':'rgba(239,219,178,.45)','--pz-glow':'rgba(239,219,178,.22)' } },
             sakura: { base:'light', vars:{ '--bg':'#fff4f6','--panel':'#fffafb','--border':'#f2c6d0','--text':'#3d2a2f','--muted':'#8d6f77',
                 '--surface-0':'#fff7f9','--surface-1':'#fffbfc','--surface-2':'#fde8ee','--surface-3':'#fad8e2','--surface-4':'#f6c6d4',
                 '--accent':'#e75480','--accent-bright':'#f07a9c','--accent-dark':'#c13a64','--accent-contrast':'#fff','--accent-rgb':'231 84 128',
