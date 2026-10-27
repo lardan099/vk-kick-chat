@@ -499,9 +499,64 @@ async function installHeaderRules() {
             ]
         },
         condition: { requestDomains: ['kick.com', 'live.vkvideo.ru'], resourceTypes: ['sub_frame'], tabIds: [chrome.tabs.TAB_ID_NONE] }
-    }];
+    }, ...CONFIG.giftSites.map((site, i) => ({
+        // 3+ — окно выдачи: сервер принимает только свой Origin (запросы самого расширения, не вкладок)
+        id: 3 + i,
+        priority: 1,
+        action: { type: 'modifyHeaders', requestHeaders: [
+            { header: 'origin', operation: 'set', value: site },
+            { header: 'referer', operation: 'set', value: site + '/zapisi/manage' }
+        ] },
+        condition: { urlFilter: '|' + site + '/api/rec/admin/', resourceTypes: ['xmlhttprequest', 'other'], tabIds: [chrome.tabs.TAB_ID_NONE] }
+    }))];
     try { await chrome.declarativeNetRequest.updateSessionRules({ removeRuleIds: rules.map(r => r.id), addRules: rules }); }
     catch (e) { console.warn('[MergedChat] DNR', e); }
+}
+
+// ---------- выдача подписок (окно gifts.html) ----------
+// Ходим в /api/rec/admin того сайта, где есть вход (кука pzdc_session). Значение куки
+// не читаем и никуда не передаём: fetch с credentials отправляет её сам. Пути — только
+// из белого списка, тело — только JSON выдачи. Права «команды» проверяет сервер.
+const GIFT_PATH = /^(me|grant|lookup\?[\w%.=&@-]{1,200}|history\?[\w%.=&@-]{0,300})$/;
+async function giftSite() {
+    for (const site of CONFIG.giftSites) {
+        const c = await chrome.cookies.get({ url: site + '/', name: 'pzdc_session' }).catch(() => null);
+        if (c) return site;
+    }
+    return CONFIG.giftSites[0];
+}
+async function giftApi(msg) {
+    const path = String(msg.path || '');
+    const method = msg.method === 'POST' ? 'POST' : 'GET';
+    if (!GIFT_PATH.test(path) || (method === 'POST') !== (path === 'grant')) return { error: 'Запрос не разрешён' };
+    const site = await giftSite();
+    const headers = { accept: 'application/json' };
+    if (method === 'POST') {
+        headers['content-type'] = 'application/json';
+        headers['x-csrf-token'] = String(msg.csrf || '').slice(0, 128);
+        if (typeof msg.body !== 'string' || msg.body.length > 2048) return { error: 'Запрос не разрешён' };
+    }
+    try {
+        const r = await fetch(`${site}/api/rec/admin/${path}`, {
+            method, headers, body: method === 'POST' ? msg.body : undefined,
+            credentials: 'include', cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(method === 'POST' ? 60000 : 20000)
+        });
+        let data = null;
+        try { data = await r.json(); } catch (e) { }
+        return { status: r.status, data, site };
+    } catch (e) {
+        return { error: e && e.name === 'TimeoutError' ? 'Сайт долго не отвечает. Нажми «Проверить результат»: второй оплаты не будет.' : 'Сайт не ответил. Проверь интернет.' };
+    }
+}
+async function openGifts(q) {
+    const url = chrome.runtime.getURL('gifts.html') + (q ? '?q=' + encodeURIComponent(q) : '');
+    const [tab] = await chrome.tabs.query({ url: chrome.runtime.getURL('gifts.html') + '*' });
+    if (tab) {
+        await chrome.windows.update(tab.windowId, { focused: true }).catch(() => { });
+        return true;
+    }
+    await chrome.windows.create({ url, type: 'popup', width: 900, height: 760, focused: true });
+    return true;
 }
 
 // ---------- обновления ----------
@@ -637,6 +692,9 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
         'helpers:status': () => serial(watchdog),
         'feed:open': () => openFeed(),
         'transfer:open': () => openTransfer(),
+        'gift:api': () => giftApi(msg),
+        'gift:open': () => openGifts(msg.q),
+        'gift:login': () => giftSite().then(site => chrome.tabs.create({ url: site + '/zapisi/manage', active: true })),
         'update:check': () => checkUpdate(),
         'update:open': () => openUpdater(!!msg.auto)
     };

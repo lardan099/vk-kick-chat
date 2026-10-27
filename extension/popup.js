@@ -76,6 +76,8 @@ const busy = async (btn, text, fn) => {
 };
 
 $('open').addEventListener('click', async () => { await send('feed:open'); window.close(); });
+$('gifts').addEventListener('click', async () => { await send('gift:open'); window.close(); });
+send('gift:api', { path: 'me' }).then(r => { $('gifts').hidden = !(r && r.status === 200 && r.data && r.data.allowed === true); }).catch(() => { });
 $('restart').addEventListener('click', () => busy($('restart'), 'Перезапускаю…', () => send('helpers:restart')));
 $('check').addEventListener('click', () => busy($('check'), 'Проверяю…', () => send('update:check')));
 $('upd-go').addEventListener('click', async () => { await send('update:open', { auto: true }); window.close(); });

@@ -9,6 +9,8 @@ export const CONFIG = {
     downloadUrl: 'https://github.com/lardan099/vk-kick-chat/archive/refs/heads/main.zip',
 
     feedUrl: 'https://kick.com/popout/grpzdc/chat#feed',
+    // выдача подписок (/zapisi/manage): берётся первый сайт, где ты вошёл
+    giftSites: ['https://m.pzdcflix.ru', 'https://pzdcflix.ru', 'https://m.pzdcflix.live', 'https://pzdcflix.live'],
 
     // Фоновые вкладки, которые расширение держит открытыми, пока открыт чат.
     helpers: {

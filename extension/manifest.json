@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Merged Chat (Kick + VK Play Live)",
   "short_name": "Merged Chat",
-  "version": "6.54",
+  "version": "6.55",
   "description": "Единая лента чатов Kick и VK Play Live. Нужные вкладки держит в фоне сам, обновляется в один клик.",
   "minimum_chrome_version": "116",
   "icons": {
@@ -37,7 +37,10 @@
     "https://live.vkvideo.ru/*",
     "https://api.live.vkvideo.ru/*",
     "https://7tv.io/*",
-    "https://pzdcflix.live/*"
+    "https://pzdcflix.live/*",
+    "https://m.pzdcflix.live/*",
+    "https://pzdcflix.ru/*",
+    "https://m.pzdcflix.ru/*"
   ],
   "content_scripts": [
     {

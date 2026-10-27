@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Выдать подписку — Merged Chat</title>
+<link rel="stylesheet" href="ui.css">
+<link rel="stylesheet" href="gifts.css">
+</head>
+<body class="gift-page">
+  <header class="g-head">
+    <div>
+      <h1>Выдать подписку</h1>
+      <p class="note">Канал и чат @vipgrpzdc_bot. Получателю платить не нужно.</p>
+    </div>
+    <span class="g-staff" id="staff-name" hidden></span>
+  </header>
+
+  <div id="access" class="g-notice" role="status">Проверяем доступ…</div>
+  <button class="btn accent" id="login" hidden>Войти на сайте через Kick</button>
+
+  <div id="workspace" hidden>
+    <div class="g-tabs" role="group" aria-label="Раздел">
+      <button type="button" id="show-grant" aria-pressed="true">Выдать</button>
+      <button type="button" id="show-history" aria-pressed="false">История выдач</button>
+    </div>
+
+    <div id="grant-view" class="g-grid">
+      <section class="g-card">
+        <form id="lookup" class="g-step">
+          <label class="g-step-title" for="target"><span>1</span>Кому</label>
+          <div class="g-search">
+            <input id="target" placeholder="@username или Telegram ID" autocomplete="off" maxlength="40" required spellcheck="false">
+            <button id="paste-target" class="btn" type="button" title="Вставить из буфера и найти">Вставить</button>
+            <button class="btn" type="submit">Найти</button>
+          </div>
+          <div id="recipient" class="g-recipient" hidden>
+            <div class="g-avatar" id="recipient-avatar" aria-hidden="true"></div>
+            <div class="g-recipient-main"><strong id="recipient-name"></strong><small id="recipient-id"></small></div>
+            <span id="recipient-state" class="g-pill"></span>
+          </div>
+        </form>
+
+        <form id="grant" class="g-step">
+          <div class="g-step-title"><span>2</span>Срок</div>
+          <div class="g-months" role="group" aria-label="Срок подписки">
+            <button type="button" data-months="1" aria-pressed="true">1<small>месяц</small></button>
+            <button type="button" data-months="3" aria-pressed="false">3<small>месяца</small></button>
+            <button type="button" data-months="6" aria-pressed="false">6<small>месяцев</small></button>
+            <button type="button" data-months="12" aria-pressed="false">12<small>месяцев</small></button>
+            <label class="g-custom" for="months" title="Свой срок, от 1 до 12 месяцев"><input id="months" type="number" min="1" max="12" step="1" value="1" required><small>свой</small></label>
+          </div>
+
+          <div class="g-step-title"><span>3</span>Итог</div>
+          <dl class="g-summary" aria-live="polite">
+            <div><dt>Стоимость</dt><dd><strong id="price-rub">400 ₽</strong> <small id="price-stars">250 Stars</small></dd></div>
+            <div id="replacement" hidden><dt>Доступ</dt><dd id="new-expiry"></dd></div>
+          </dl>
+          <button type="submit" id="give" class="btn accent wide" disabled>Выдать на 1 мес.</button>
+        </form>
+        <div id="result" class="g-notice" role="status" aria-live="polite" hidden></div>
+        <button type="button" id="retry" class="btn wide" hidden>Попробовать ещё раз</button>
+      </section>
+
+      <aside class="g-card">
+        <div class="g-card-head">
+          <h2>Прошлые выдачи</h2>
+          <span id="audit-warning" class="g-pill" role="status" hidden></span>
+        </div>
+        <p id="audit-summary" class="g-empty" role="status" aria-live="polite">Найдите человека — здесь появятся его прошлые выдачи.</p>
+        <ol id="audit-list" class="g-list"></ol>
+        <button type="button" id="audit-more" class="btn wide" hidden>Показать ещё</button>
+      </aside>
+    </div>
+
+    <section id="history-view" class="g-card" hidden>
+      <div class="g-card-head">
+        <h2>История ручных выдач</h2>
+        <button type="button" id="history-all" class="btn">Все получатели</button>
+      </div>
+      <form id="history-search" class="g-search">
+        <input id="history-query" placeholder="@username или Telegram ID" autocomplete="off" maxlength="40" spellcheck="false">
+        <button class="btn" type="submit">Найти</button>
+      </form>
+      <p id="history-summary" class="g-empty" role="status" aria-live="polite"></p>
+      <ol id="history-list" class="g-list"></ol>
+      <button type="button" id="history-more" class="btn wide" hidden>Показать ещё</button>
+    </section>
+  </div>
+  <p class="note g-foot" id="site"></p>
+  <script type="module" src="theme.js"></script>
+  <script type="module" src="gifts.js"></script>
+</body>
+</html>

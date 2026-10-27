@@ -1,26 +1,41 @@
 {
-  "version": "6.54",
-  "notes": "Кнопка ответа на сообщение (↩ и «Ответить» в меню ника); поле ввода растёт по мере набора",
+  "version": "6.55",
+  "notes": "Выдача подписок @vipgrpzdc_bot прямо из чата (для команды канала)",
   "files": [
     {
       "path": "background.js",
-      "sha256": "e3e92a3b4e8358d5ecd5f983796b66f4401027e723d7e2e1cca18a3694bdfab3",
-      "size": 33383
+      "sha256": "ff905fda0b91a5da8ec5e472103faf5c0020ac5f5d85db7de4f605cee74bb954",
+      "size": 36863
     },
     {
       "path": "chat.js",
-      "sha256": "5bc2011683d08472329d6c39f326774151c2c975ecf20e9e26439771041a0c82",
+      "sha256": "0b36811eb80033a41b82a3ea23147f9201df62f8e75b81612d381e0be5a58bf2",
       "size": 319453
     },
     {
       "path": "config.js",
-      "sha256": "b090c5ecf4302a7af7f364c36b292604335cdc41e5e75da5d3cf294d23084b11",
-      "size": 4800
+      "sha256": "870d86367a97ae03a18f10c71d31980393503880cf71ada3deaff604099017fd",
+      "size": 5033
     },
     {
       "path": "ext-ui.js",
-      "sha256": "3bbfd4aea5858cd5e32fc3e2d392028d5d5ba70fd354a6c7ef951c5acb5a5ae6",
-      "size": 21348
+      "sha256": "1166122d27b87b9d2174c889af5abda30829d0dcb12fe12f66d243996b7728bd",
+      "size": 22670
+    },
+    {
+      "path": "gifts.css",
+      "sha256": "7f95854d8cafc106e5f275dd3804f8c8e166bb24eb5bc7cb8c8079404a67db5b",
+      "size": 5476
+    },
+    {
+      "path": "gifts.html",
+      "sha256": "352f985ed2e8518e36cf3fce29848727809d1ccf74650211a865913320f73664",
+      "size": 5016
+    },
+    {
+      "path": "gifts.js",
+      "sha256": "ab099ab6806e6de31b81bbf1606d5d4885c12aac12651dce2a5f1e1810a45799",
+      "size": 21031
     },
     {
       "path": "gm-shim.js",
@@ -49,8 +64,8 @@
     },
     {
       "path": "manifest.json",
-      "sha256": "f4900b4df5498575798d5a23e490cb9db459b2c878316d55ff601359165b3dcf",
-      "size": 2112
+      "sha256": "cb683ad2b1b3688c230e192313c36a438e3c24dd176e8d3ecd7306ecaa7dc43e",
+      "size": 2205
     },
     {
       "path": "offscreen.html",
@@ -69,13 +84,13 @@
     },
     {
       "path": "popup.html",
-      "sha256": "a11a489132859dd1a555ba6bf383be84b5469dfafba2d3b38f8b5040829d7045",
-      "size": 3395
+      "sha256": "ec53c8e6ea50550da4abe7bfa079d61111f02e59d204e505c98dfd8415ee4cd0",
+      "size": 3502
     },
     {
       "path": "popup.js",
-      "sha256": "b0ded0b7595e37d448518624776ea7bd2366517ca89db06d55ca4a7da7ef3b82",
-      "size": 7100
+      "sha256": "706cca149c46925bba540406b10f70d129a2954178f7f4c1ec08610124348700",
+      "size": 7345
     },
     {
       "path": "theme.js",

@@ -33,6 +33,9 @@
         const style = document.createElement('style');
         style.textContent = `
             #mcx-btn{display:inline-flex;align-items:center;gap:6px;margin-right:6px}
+            #mcx-gift{display:inline-flex;align-items:center;gap:5px;margin-right:6px}
+            #mcx-gift svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+            @media (max-width:560px){#mcx-gift .mcx-label{display:none}}
             #mcx-btn.open{border-color:var(--accent-strong,#888);background:var(--accent-soft,rgba(255,255,255,.08))}
             .mcx-dot{width:7px;height:7px;border-radius:50%;background:var(--muted,#888);flex:0 0 auto;transition:background-color .3s}
             .mcx-dot.ok{background:#3aa655}
@@ -97,6 +100,19 @@
         btn.innerHTML = '<i class="mcx-dot"></i><span class="mcx-label">Фон</span><span class="mcx-new">new</span>';
         right.insertBefore(btn, right.firstChild);
         const dot = btn.querySelector('.mcx-dot');
+
+        // «Подписки» — только команде канала: сервер сам говорит, пускать ли (вход на pzdcflix через Kick)
+        MC_EXT.send('gift:api', { path: 'me' }).then(r => {
+            if (!r || r.status !== 200 || !r.data || r.data.allowed !== true) return;
+            const gift = document.createElement('button');
+            gift.id = 'mcx-gift';
+            gift.type = 'button';
+            gift.className = 'bar-btn';
+            gift.title = 'Выдать подписку (@vipgrpzdc_bot)';
+            gift.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="8" width="17" height="4" rx="1"/><path d="M5 12v8h14v-8M12 8v12M12 8c-1.5-3-5-3.5-5-1.2C7 8 9.5 8 12 8Zm0 0c1.5-3 5-3.5 5-1.2C17 8 14.5 8 12 8Z"/></svg><span class="mcx-label">Подписки</span>';
+            gift.addEventListener('click', () => MC_EXT.send('gift:open').catch(() => { }));
+            right.insertBefore(gift, btn);
+        }).catch(() => { });
 
         const panel = document.createElement('div');
         panel.id = 'mcx-panel';
