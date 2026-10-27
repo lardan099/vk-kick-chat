@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Merged Chat (Kick + VK Play Live)
 // @namespace    grpzdc.mergedchat
-// @version      6.58
+// @version      6.59
 // @description  Перехватывает WebSocket реальных чатов Kick и VK Play Live, собирает все сообщения и рисует единую ленту своим дизайном. Сохраняет весь функционал родных чатов (авторизация, бан и т.д.).
 // @match        https://kick.com/popout/*/chat*
 // @match        https://dashboard.kick.com/*
@@ -1296,9 +1296,14 @@
             .platform-stat img{width:18px;height:18px;opacity:.9}
             .badge.img{border-radius:3px}
             .name{margin-right:3px}
-            .msg .ts{float:right;margin:1px 0 0 8px;font-size:11px;line-height:1.6;color:var(--muted);font-variant-numeric:tabular-nums;
-                opacity:0;transition:opacity .12s ease;user-select:none}
-            .msg:hover .ts,.thread-msg .ts{opacity:1}
+            /* время — поверх строки при наведении: в разметке строки места не занимает, текст не двигает */
+            .msg .ts{position:absolute;top:3px;right:32px;z-index:1;padding:1px 6px;border:1px solid var(--border);border-radius:6px;
+                background:var(--panel);color:var(--muted);font-size:11px;line-height:18px;font-variant-numeric:tabular-nums;
+                pointer-events:none;user-select:none;opacity:0;transition:opacity .1s ease}
+            .msg:hover>.ts{opacity:1}
+            .msg:not(:has(>.msg-reply))>.ts{right:4px}
+            .thread-msg .ts{position:static;opacity:1;border:0;background:none;padding:0;margin-left:6px}
+            html[data-no-time] .msg .ts{display:none}
             .reply,html[data-theme="light"] .reply{margin-left:26px;border-left:2px solid var(--accent-strong);color:var(--muted)}
             .reply-label,.reply-text,html[data-theme="light"] .reply-label,html[data-theme="light"] .reply-text{color:inherit}
             .reply[data-parent-id]:hover,html[data-theme="light"] .reply[data-parent-id]:hover{border-left-color:var(--accent);color:var(--text);background:transparent}
@@ -1340,7 +1345,6 @@
             .msg:hover>.msg-reply,.msg-reply:focus-visible{display:grid}
             .msg-reply:hover{color:var(--accent);background:var(--accent-soft)}
             .msg-reply:active{transform:scale(.92)}
-            .msg:hover>.ts{margin-right:28px}
             .msg.replying{box-shadow:inset 3px 0 0 var(--accent);background:var(--accent-soft)}
             #reply-compose{min-height:20px;border-left-color:var(--accent);color:var(--muted);font-size:12px}
             #reply-compose b{color:var(--text);font-weight:700;flex:0 0 auto}
@@ -1457,6 +1461,10 @@
                         <button type="button" class="theme-choice platform-toggle" data-platform-toggle="kick" aria-pressed="true"><img src="${KICK_ICON_URL}" alt="">Kick<span class="platform-state">вкл</span></button>
                         <button type="button" class="theme-choice platform-toggle" data-platform-toggle="vk" aria-pressed="true"><img src="${VK_ICON_URL}" alt="">VK<span class="platform-state">вкл</span></button>
                         <small id="platform-status" class="palette-status">Отключённый чат пропадает из ленты, онлайна и отправки</small>
+                    </div>
+                    <div class="theme-row">
+                        <strong>Время</strong>
+                        <button type="button" class="theme-choice" id="time-toggle" aria-pressed="true">При наведении</button>
                     </div>
                 </section>
                 <section class="theme-config" aria-label="Тема и палитра">
@@ -1995,6 +2003,20 @@
             localStorage.setItem('mergedChatFontSize', String(n));
         }
         applyFontSize(localStorage.getItem('mergedChatFontSize') || 14);
+        // время у сообщений: показывать у всех или не показывать вовсе
+        const timeToggle = document.getElementById('time-toggle');
+        function applyTimeShown(on){
+            if(on) delete document.documentElement.dataset.noTime; else document.documentElement.dataset.noTime = '1';
+            timeToggle.classList.toggle('active', on);
+            timeToggle.setAttribute('aria-pressed', String(on));
+            timeToggle.textContent = on ? 'При наведении' : 'Не показывать';
+        }
+        applyTimeShown(localStorage.getItem('mergedChatTime') !== 'off');
+        timeToggle.addEventListener('click', () => {
+            const on = !!document.documentElement.dataset.noTime;
+            localStorage.setItem('mergedChatTime', on ? 'on' : 'off');
+            applyTimeShown(on);
+        });
         fontSlider.addEventListener('input', e => applyFontSize(e.target.value));
         document.getElementById('settings-toggle').addEventListener('click', () => settingsPanel.classList.toggle('open'));
         document.getElementById('clear-chat').addEventListener('click', () => {

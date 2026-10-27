@@ -1,6 +1,6 @@
 {
-  "version": "6.58",
-  "notes": "Скин «Люкс» — PANTONE 7506 в тёмной теме, как на сайте",
+  "version": "6.59",
+  "notes": "Время поверх строки при наведении; можно выключить в настройках",
   "files": [
     {
       "path": "background.js",
@@ -9,8 +9,8 @@
     },
     {
       "path": "chat.js",
-      "sha256": "2f665fa0e62504e07a6b6b113b990a71f8669292bc81b2b85b087c8d871e42eb",
-      "size": 320446
+      "sha256": "be8b9496144746cc1057225b1b54ff5372f37d826e9e9323e9fc07f92bb6901c",
+      "size": 322071
     },
     {
       "path": "config.js",
@@ -64,7 +64,7 @@
     },
     {
       "path": "manifest.json",
-      "sha256": "095f3c5d54f4a0d894d1aeb1dd4c34d0cd8e0ee536bd40f10624a0e1b93b1f08",
+      "sha256": "d3fea8b5310e63731b80497eddf090dd78e0069287a4bad9fbd0c6a2f6a0b15d",
       "size": 2226
     },
     {
