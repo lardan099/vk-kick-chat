@@ -33,9 +33,39 @@
         const style = document.createElement('style');
         style.textContent = `
             #mcx-btn{display:inline-flex;align-items:center;gap:6px;margin-right:6px}
-            #mcx-gift{display:inline-flex;align-items:center;gap:5px;margin-right:6px}
+            #mcx-gift{display:inline-grid;place-items:center;width:26px;padding:0;margin-right:6px}
             #mcx-gift svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-            @media (max-width:560px){#mcx-gift .mcx-label{display:none}}
+            #mcx-gift.open{border-color:var(--accent-strong,#888);background:var(--accent-soft,rgba(255,255,255,.08))}
+            #mcx-gifts{position:fixed;top:calc(var(--bar-h) + 4px);right:8px;z-index:999996;width:300px;max-width:calc(100vw - 16px);
+                display:none;flex-direction:column;gap:7px;padding:8px;border:1px solid var(--border,#444);border-radius:10px;
+                background:var(--panel,#181a1b);color:var(--text,#eee);font-size:12px;box-shadow:0 10px 28px rgba(0,0,0,.22)}
+            #mcx-gifts.open{display:flex;animation:mcx-open .12s ease-out}
+            .gq-row{margin:0}
+            .gq-target{width:100%;height:32px;padding:0 10px;border:1px solid var(--border,#444);border-radius:8px;background:var(--surface-0,#111);
+                color:var(--text,#eee);font:inherit;font-size:13px;outline:none;box-sizing:border-box}
+            .gq-target:focus{border-color:var(--accent,#7a6337);box-shadow:0 0 0 2px var(--accent-soft,rgba(0,0,0,.1))}
+            .gq-who{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"n p" "s p";align-items:center;column-gap:8px;
+                padding:6px 9px;border:1px solid var(--border,#444);border-radius:8px;background:var(--surface-0,#111);animation:mcx-open .12s ease-out}
+            .gq-who b{grid-area:n;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+            .gq-who small{grid-area:s;color:var(--muted,#999);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+            .gq-pill{grid-area:p;padding:2px 8px;border-radius:999px;border:1px solid var(--border,#444);color:var(--muted,#999);font-size:11px;font-weight:600;white-space:nowrap}
+            .gq-pill[data-tone=ok]{color:#3aa655;border-color:rgba(58,166,85,.5)}
+            .gq-pill[data-tone=bad]{color:#d24545;border-color:rgba(210,69,69,.5)}
+            .gq-months{display:grid;grid-template-columns:repeat(4,1fr) 58px;gap:5px}
+            .gq-months button,.gq-custom{height:30px;border:1px solid var(--border,#444);border-radius:7px;background:var(--surface-1,#1a1a1a);
+                color:var(--text,#eee);font:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:background-color .1s,border-color .1s,transform .08s}
+            .gq-months button:hover{background:var(--surface-3,#2e3133)}
+            .gq-months button:active{transform:scale(.96)}
+            .gq-months button[aria-pressed=true]{border-color:var(--accent,#7a6337);background:var(--accent-soft,rgba(0,0,0,.1))}
+            .gq-custom{width:100%;text-align:center;cursor:text;outline:none;box-sizing:border-box;font-weight:600}
+            .gq-custom:focus{border-color:var(--accent,#7a6337)}
+            .gq-give{height:34px;font-size:13px}
+            .gq-give:disabled{opacity:.5;cursor:default;transform:none}
+            .gq-note{padding:6px 9px;border-radius:7px;font-size:12px;border:1px solid rgba(210,69,69,.4);background:rgba(210,69,69,.09)}
+            .gq-note[data-kind=ok]{border-color:rgba(58,166,85,.45);background:rgba(58,166,85,.1)}
+            .gq-note[data-kind=info]{border-color:var(--border,#444);background:transparent;color:var(--muted,#999)}
+            .gq-link{align-self:flex-start;border:0;background:none;padding:0;color:var(--muted,#999);font:inherit;font-size:11px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+            .gq-link:hover{color:var(--text,#eee)}
             #mcx-btn.open{border-color:var(--accent-strong,#888);background:var(--accent-soft,rgba(255,255,255,.08))}
             .mcx-dot{width:7px;height:7px;border-radius:50%;background:var(--muted,#888);flex:0 0 auto;transition:background-color .3s}
             .mcx-dot.ok{background:#3aa655}
@@ -101,18 +131,144 @@
         right.insertBefore(btn, right.firstChild);
         const dot = btn.querySelector('.mcx-dot');
 
-        // «Подписки» — только команде канала: сервер сам говорит, пускать ли (вход на pzdcflix через Kick)
+        // «Подписки» — быстрая выдача прямо в чате (команде канала: сервер сам говорит, пускать ли).
+        // Ключей нет: запросы идут в /api/rec/admin сайта под входом на pzdcflix, через воркер.
+        // Логика — как в /zapisi/manage (public/subscription-admin.js репозитория pzdcflix).
         MC_EXT.send('gift:api', { path: 'me' }).then(r => {
             if (!r || r.status !== 200 || !r.data || r.data.allowed !== true) return;
+            setupGifts(r.data);
+        }).catch(() => { });
+        function setupGifts(me) {
+            let csrf = me.csrf;
             const gift = document.createElement('button');
             gift.id = 'mcx-gift';
             gift.type = 'button';
             gift.className = 'bar-btn';
-            gift.title = 'Выдать подписку (@vipgrpzdc_bot)';
-            gift.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="8" width="17" height="4" rx="1"/><path d="M5 12v8h14v-8M12 8v12M12 8c-1.5-3-5-3.5-5-1.2C7 8 9.5 8 12 8Zm0 0c1.5-3 5-3.5 5-1.2C17 8 14.5 8 12 8Z"/></svg><span class="mcx-label">Подписки</span>';
-            gift.addEventListener('click', () => MC_EXT.send('gift:open').catch(() => { }));
+            gift.title = 'Выдать подписку';
+            gift.setAttribute('aria-label', 'Выдать подписку');
+            gift.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="8" width="17" height="4" rx="1"/><path d="M5 12v8h14v-8M12 8v12M12 8c-1.5-3-5-3.5-5-1.2C7 8 9.5 8 12 8Zm0 0c1.5-3 5-3.5 5-1.2C17 8 14.5 8 12 8Z"/></svg>';
             right.insertBefore(gift, btn);
-        }).catch(() => { });
+
+            const gp = document.createElement('div');
+            gp.id = 'mcx-gifts';
+            gp.innerHTML = `
+                <form class="gq-row" data-f="lookup">
+                    <input class="gq-target" placeholder="@username или Telegram ID" autocomplete="off" maxlength="40" spellcheck="false">
+                </form>
+                <div class="gq-who" hidden><b></b><small></small><span class="gq-pill"></span></div>
+                <div class="gq-months" role="group" aria-label="Срок">
+                    <button type="button" data-m="1" aria-pressed="true">1</button><button type="button" data-m="3">3</button>
+                    <button type="button" data-m="6">6</button><button type="button" data-m="12">12</button>
+                    <input class="gq-custom" type="number" min="1" max="12" step="1" placeholder="мес" title="Свой срок, 1–12 месяцев">
+                </div>
+                <button type="button" class="mcx-panel-btn accent gq-give" disabled>Выдать на 1 мес.</button>
+                <div class="gq-note" role="status" hidden></div>
+                <button type="button" class="gq-link">История выдач</button>`;
+            document.body.appendChild(gp);
+            const $g = s => gp.querySelector(s);
+            const input = $g('.gq-target'), who = $g('.gq-who'), give = $g('.gq-give'), note = $g('.gq-note'), custom = $g('.gq-custom');
+            let months = 1, recipient = null, busy = false, operation = null, timer = null, version = 0, lastQuery = '';
+            const shortDate = v => new Date(v).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }).replace(/ г\.$/, '');
+            const normalize = v => {
+                let q = String(v).trim();
+                const link = q.match(/^https:\/\/(?:t\.me|telegram\.me)\/([a-z0-9_]{1,32})\/?$/i);
+                if (link) q = link[1];
+                if (/^@?[1-9]\d{0,19}$/.test(q)) return q.replace(/^@/, '');
+                if (/^@?[a-z][a-z0-9_]{0,31}$/i.test(q)) return '@' + q.replace(/^@/, '');
+                return q;
+            };
+            const valid = q => /^[1-9]\d{0,19}$/.test(q) || /^@[a-z][a-z0-9_]{3,31}$/i.test(q);
+            const say = (text, kind = 'error') => { note.textContent = text; note.dataset.kind = kind; note.hidden = !text; };
+            async function api(path, init = {}) {
+                const r = await MC_EXT.send('gift:api', { path, method: init.method || 'GET', body: init.body || null, csrf: init.csrf || '' });
+                if (!r || (r.error && !r.status)) throw Object.assign(new Error(r && r.error || 'Сайт не ответил'), { code: 'NETWORK' });
+                const data = r.data || {};
+                if (r.status < 200 || r.status >= 300) throw Object.assign(new Error(data.message || 'Сервер не подтвердил ответ'), { code: data.error, status: r.status });
+                return data;
+            }
+            function render() {
+                const ok = Number.isInteger(months) && months >= 1 && months <= 12;
+                gp.querySelectorAll('[data-m]').forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.m) === months && !custom.value)));
+                give.disabled = busy || !recipient || recipient.banned || !ok;
+                give.textContent = busy ? 'Выдаю…' : operation ? 'Проверить результат' : `Выдать на ${ok ? months : '…'} мес. · ${ok ? months * 400 : '—'} ₽`;
+                if (operation && !busy) give.disabled = false;
+                who.hidden = !recipient;
+                if (!recipient) return;
+                const subs = recipient.subscriptions || [];
+                const infinite = subs.some(s => s.infinite);
+                const ends = subs.map(s => Date.parse(s.expiredAt)).filter(Number.isFinite);
+                who.querySelector('b').textContent = recipient.username ? '@' + recipient.username : recipient.name || 'Пользователь Telegram';
+                who.querySelector('small').textContent = 'ID ' + recipient.telegramId + (recipient.issued ? ` · выдавали ${recipient.issued}` : '');
+                const pill = who.querySelector('.gq-pill');
+                pill.textContent = recipient.banned ? 'заблокирован' : infinite ? 'бессрочно' : ends.length ? 'до ' + shortDate(Math.max(...ends)) : 'без подписки';
+                pill.dataset.tone = recipient.banned ? 'bad' : ends.length || infinite ? 'ok' : '';
+            }
+            async function lookup() {
+                clearTimeout(timer);
+                const q = normalize(input.value);
+                if (!valid(q)) { recipient = null; operation = null; say(q ? 'Нужен @username или числовой Telegram ID' : ''); render(); return; }
+                if (q === lastQuery && recipient) return;
+                const v = ++version;
+                lastQuery = q; recipient = null; operation = null; say('Ищу…', 'info'); render();
+                try {
+                    const data = await api('lookup?q=' + encodeURIComponent(q));
+                    if (v !== version) return;
+                    recipient = { ...data.recipient, issued: data.history && data.history.counts ? data.history.counts.issued : 0 };
+                    say(recipient.banned ? 'Заблокирован в боте — выдать нельзя' : '');
+                } catch (e) {
+                    if (v !== version) return;
+                    lastQuery = ''; say(e.message);
+                }
+                render();
+            }
+            async function grant() {
+                if (busy || (!operation && give.disabled)) return;
+                operation = operation || { operationId: crypto.randomUUID(), telegramId: recipient.telegramId, months, replaceExisting: Boolean(recipient.subscriptions.length) };
+                busy = true; say('', ''); render();
+                try {
+                    let result;
+                    try { result = await api('grant', { method: 'POST', body: JSON.stringify(operation), csrf }); }
+                    catch (e) {
+                        // токен защиты живёт час — обновляем и повторяем ту же операцию (сервер не оплатит дважды)
+                        if (e.code !== 'CSRF') throw e;
+                        csrf = (await api('me')).csrf;
+                        result = await api('grant', { method: 'POST', body: JSON.stringify(operation), csrf });
+                    }
+                    const issued = (recipient && recipient.issued || 0) + 1;
+                    recipient = { ...result.recipient, issued };
+                    const ends = result.recipient.subscriptions.map(s => Date.parse(s.expiredAt)).filter(Number.isFinite);
+                    const name = result.recipient.username ? '@' + result.recipient.username : result.recipient.name || 'Получатель';
+                    say(`Готово: ${name} +${result.months} мес.${ends.length ? ' Доступ до ' + shortDate(Math.max(...ends)) + '.' : ''}`, 'ok');
+                    operation = null;
+                } catch (e) {
+                    say(e.message);
+                    // продолжать стоит только счёт, который уже создан/оплачивается — его и проверит повтор
+                    if (e.code && !['PAY_UNKNOWN', 'SUBSCRIPTION_PENDING', 'INVOICE_STATE', 'GRANT_BUSY', 'VISIBILITY_RESTORE', 'NETWORK'].includes(e.code)) operation = null;
+                } finally { busy = false; render(); }
+            }
+            const open = on => {
+                gp.classList.toggle('open', on);
+                gift.classList.toggle('open', on);
+                if (on) { openPanel(false); input.focus(); input.select(); }
+            };
+            gift.addEventListener('click', e => { e.stopPropagation(); open(!gp.classList.contains('open')); });
+            btn.addEventListener('click', () => open(false));
+            document.addEventListener('click', e => { if (!gp.contains(e.target) && !gift.contains(e.target)) open(false); });
+            document.addEventListener('keydown', e => { if (e.key === 'Escape' && gp.classList.contains('open')) open(false); });
+            $g('[data-f=lookup]').addEventListener('submit', e => { e.preventDefault(); lookup(); });
+            input.addEventListener('input', () => {
+                clearTimeout(timer); operation = null;
+                const q = normalize(input.value);
+                if (q !== lastQuery) { recipient = null; version++; say(''); render(); }
+                if (valid(q)) timer = setTimeout(lookup, 300);
+            });
+            input.addEventListener('paste', () => setTimeout(lookup, 0));
+            gp.querySelectorAll('[data-m]').forEach(b => b.addEventListener('click', () => { months = Number(b.dataset.m); custom.value = ''; operation = null; render(); }));
+            custom.addEventListener('input', () => { months = custom.value ? Number(custom.value) : 1; operation = null; render(); });
+            give.addEventListener('click', grant);
+            $g('.gq-link').addEventListener('click', () => { open(false); MC_EXT.send('gift:open', { history: true }).catch(() => { }); });
+            render();
+        }
 
         const panel = document.createElement('div');
         panel.id = 'mcx-panel';

@@ -1,15 +1,15 @@
 {
-  "version": "6.55",
-  "notes": "Выдача подписок @vipgrpzdc_bot прямо из чата (для команды канала)",
+  "version": "6.56",
+  "notes": "Выдача подписок — быстрая панель прямо в чате",
   "files": [
     {
       "path": "background.js",
-      "sha256": "ff905fda0b91a5da8ec5e472103faf5c0020ac5f5d85db7de4f605cee74bb954",
-      "size": 36863
+      "sha256": "ec84bcee5266e37aa3cb3115d7b0122595495270503cb43a0e2e3f2bc29abb0c",
+      "size": 36976
     },
     {
       "path": "chat.js",
-      "sha256": "0b36811eb80033a41b82a3ea23147f9201df62f8e75b81612d381e0be5a58bf2",
+      "sha256": "fd6d78b3c4a6b95776735d2cb69c7d3ca3fc7b8525be8d35485868e23f6e262b",
       "size": 319453
     },
     {
@@ -19,8 +19,8 @@
     },
     {
       "path": "ext-ui.js",
-      "sha256": "1166122d27b87b9d2174c889af5abda30829d0dcb12fe12f66d243996b7728bd",
-      "size": 22670
+      "sha256": "9b5adaa608ea6631c7a80d8c56f1f3fdf68fd7709adf7ab98879c27897adeb7f",
+      "size": 35715
     },
     {
       "path": "gifts.css",
@@ -29,13 +29,13 @@
     },
     {
       "path": "gifts.html",
-      "sha256": "352f985ed2e8518e36cf3fce29848727809d1ccf74650211a865913320f73664",
-      "size": 5016
+      "sha256": "a1667fbc05265abfecf0bdd15772050a62a9b0f8ac6cc6eb82d849ff708c8dfd",
+      "size": 4877
     },
     {
       "path": "gifts.js",
-      "sha256": "ab099ab6806e6de31b81bbf1606d5d4885c12aac12651dce2a5f1e1810a45799",
-      "size": 21031
+      "sha256": "852a39e49ca84391800740045aea87fd638e58c824bafa22278cbb3b04f5672f",
+      "size": 21261
     },
     {
       "path": "gm-shim.js",
@@ -64,7 +64,7 @@
     },
     {
       "path": "manifest.json",
-      "sha256": "cb683ad2b1b3688c230e192313c36a438e3c24dd176e8d3ecd7306ecaa7dc43e",
+      "sha256": "b08aa6c9a235adbae6634c9d124ef0de2db45d0f0d81a642cafd245c387d32e3",
       "size": 2205
     },
     {

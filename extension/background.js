@@ -548,10 +548,11 @@ async function giftApi(msg) {
         return { error: e && e.name === 'TimeoutError' ? 'Сайт долго не отвечает. Нажми «Проверить результат»: второй оплаты не будет.' : 'Сайт не ответил. Проверь интернет.' };
     }
 }
-async function openGifts(q) {
-    const url = chrome.runtime.getURL('gifts.html') + (q ? '?q=' + encodeURIComponent(q) : '');
+async function openGifts(q, history) {
+    const url = chrome.runtime.getURL('gifts.html') + (history ? '?history=1' : q ? '?q=' + encodeURIComponent(q) : '');
     const [tab] = await chrome.tabs.query({ url: chrome.runtime.getURL('gifts.html') + '*' });
     if (tab) {
+        if (history) await chrome.tabs.update(tab.id, { url });
         await chrome.windows.update(tab.windowId, { focused: true }).catch(() => { });
         return true;
     }
@@ -693,7 +694,7 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
         'feed:open': () => openFeed(),
         'transfer:open': () => openTransfer(),
         'gift:api': () => giftApi(msg),
-        'gift:open': () => openGifts(msg.q),
+        'gift:open': () => openGifts(msg.q, !!msg.history),
         'gift:login': () => giftSite().then(site => chrome.tabs.create({ url: site + '/zapisi/manage', active: true })),
         'update:check': () => checkUpdate(),
         'update:open': () => openUpdater(!!msg.auto)

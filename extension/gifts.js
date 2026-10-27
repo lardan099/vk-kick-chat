@@ -296,8 +296,10 @@
     $('access').dataset.kind = 'error';
     $('login').hidden = error.status !== 403;
   });
-  checkAccess();
+  const accessReady = checkAccess();
   // окно открыли из чата с готовым получателем: ?q=@username
-  const preset = new URLSearchParams(location.search).get('q');
-  if (preset) $('target').value = preset;
+  const params = new URLSearchParams(location.search);
+  if (params.get('q')) $('target').value = params.get('q');
+  // из чата «История выдач» — сразу на вкладку истории
+  if (params.has('history')) accessReady.then(() => { if (!$('workspace').hidden) showView(true); });
 })();
