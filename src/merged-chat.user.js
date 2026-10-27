@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Merged Chat (Kick + VK Play Live)
 // @namespace    grpzdc.mergedchat
-// @version      6.53
+// @version      6.54
 // @description  Перехватывает WebSocket реальных чатов Kick и VK Play Live, собирает все сообщения и рисует единую ленту своим дизайном. Сохраняет весь функционал родных чатов (авторизация, бан и т.д.).
 // @match        https://kick.com/popout/*/chat*
 // @match        https://dashboard.kick.com/*
@@ -41,6 +41,7 @@
     const KICK_CHATROOM_ID = 713152;
     const VK_DOM_FALLBACK = false;
     const VK_ICON_URL = 'https://images.live.vkvideo.ru/smile/42502cfe-8cf9-4f13-aaa3-4f100359b6d1/icon/size/medium?change_time=1764532236';
+    const REPLY_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 6 6v5"/></svg>';
     const KICK_ICON_URL = 'https://www.google.com/s2/favicons?domain=kick.com&sz=64';
     const SITE_ONLINE_URL = 'https://pzdcflix.live/api/online';
     const SITE_ICON_URL = 'https://cdn.7tv.app/emote/01F6QWHR20000EB9BSAR8G1DKZ/4x.avif';
@@ -1332,6 +1333,23 @@
             .timeout-pop .dp-range:active::-webkit-slider-thumb{transform:scale(.95)}
             .timeout-pop .dp-range:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
 
+            /* ---- Ответ на сообщение и растущее поле ввода ---- */
+            .msg-reply{position:absolute;top:2px;right:4px;width:24px;height:22px;display:none;place-items:center;padding:0;border:1px solid var(--border);
+                border-radius:6px;background:var(--panel);color:var(--muted);cursor:pointer;transition:color .12s,background-color .12s,transform .1s}
+            .msg-reply svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+            .msg:hover>.msg-reply,.msg-reply:focus-visible{display:grid}
+            .msg-reply:hover{color:var(--accent);background:var(--accent-soft)}
+            .msg-reply:active{transform:scale(.92)}
+            .msg:hover>.ts{margin-right:28px}
+            .msg.replying{box-shadow:inset 3px 0 0 var(--accent);background:var(--accent-soft)}
+            #reply-compose{min-height:20px;border-left-color:var(--accent);color:var(--muted);font-size:12px}
+            #reply-compose b{color:var(--text);font-weight:700;flex:0 0 auto}
+            #reply-compose .rc-preview{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+            #reply-compose-text{display:flex;gap:6px;min-width:0;overflow:hidden}
+            .compose-row{align-items:end}
+            #message-input{min-height:34px;max-height:150px;line-height:1.35;overflow-y:hidden;transition:height .08s ease-out}
+            .compose-row>button{height:34px}
+            @media (prefers-reduced-motion:reduce){#message-input{transition:none}}
             /* ---- Скины ---- */
             .skin-choice[data-skin-choice]:not([data-skin-choice=""])::before{content:'';display:inline-block;width:10px;height:10px;margin-right:6px;border-radius:50%;
                 background:var(--sw);vertical-align:-1px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
@@ -2125,6 +2143,15 @@
 
         // Прокрутка вверх подгружает старые сообщения: в ленте внизу держим MAX строк,
         // вытесненные лежат в памяти (всего не больше FEED_SCROLLBACK) и возвращаются, когда листаешь вверх.
+        // ответ на сообщение: из строки ленты (кнопка ↩ или пункт меню ника)
+        function replyToRow(row){
+            if(!row || !row.dataset.rawid) return;
+            if(!platformOn(row.dataset.plat)) return;
+            setComposeReply({
+                platform:row.dataset.plat, name:row.dataset.name || '', userId:row.dataset.userid || '',
+                rawId:row.dataset.rawid, id:row.dataset.id || '', preview:row.dataset.preview || ''
+            });
+        }
         const FEED_SCROLLBACK = 1000;
         const olderRows = [];   // вытесненные строки, старые первыми
         function trimFeed(){
@@ -2387,7 +2414,8 @@
                 `<span class="plat ${msg.platform}"><img src="${esc(msg.platform==='kick' ? KICK_ICON_URL : VK_ICON_URL)}" alt="${msg.platform==='kick'?'Kick':'VK'}"></span>` +
                 badges +
                 `<span class="name" data-name="${esc(msg.name)}" data-plat="${msg.platform}" data-userid="${esc(msg.userId || '')}" style="${nickColorStyle(color)};cursor:pointer" title="Действия с ${esc(msg.name)}">${esc(displayName(msg.platform, msg.name, msg.userId || ''))}</span>` +
-                `<span class="text">${body}</span>`;
+                `<span class="text">${body}</span>` +
+                (normalizedRawId ? `<button class="msg-reply" type="button" title="Ответить" aria-label="Ответить ${esc(msg.name)}">${REPLY_ICON}</button>` : '');
             if(msg.reply?.name && currentUsers[msg.platform]
                 && String(msg.reply.name).trim().toLowerCase() === currentUsers[msg.platform]){
                 div.classList.add('reply-to-me');
@@ -3021,10 +3049,14 @@
                 done: svg('<path d="m5 12 5 5 9-10"/>')
             };
             const item = (nm, icon, text, extra = '') => `<button class="nm-item${extra}" data-nm="${nm}">${icon}<span>${text}</span></button>`;
+            // открыли с ника в ленте — можно ответить именно на это сообщение
+            const replyRow = el.classList.contains('name') && el.closest('#chat') ? el.closest('.msg[data-rawid]') : null;
+            const canReply = !!(replyRow && replyRow.dataset.rawid && platformOn(replyRow.dataset.plat));
             nickMenu.innerHTML =
                 `<div class="nm-head"><img class="nm-plat" src="${esc(platform === 'kick' ? KICK_ICON_URL : VK_ICON_URL)}" alt="">`
                     + `<div class="nm-who"><div class="nm-title" style="color:${esc(el.style.color || 'var(--text)')}">${esc(alias || name)}</div>`
                     + (alias ? `<div class="nm-sub">ник: ${esc(name)}</div>` : '') + `</div></div>`
+                + (canReply ? item('reply', REPLY_ICON, 'Ответить') : '')
                 + item('mention', NM_ICON.mention, 'Тегнуть')
                 + item('rename', NM_ICON.rename, alias ? 'Изменить имя' : 'Переименовать')
                 + (alias ? item('rename-reset', NM_ICON.reset, 'Вернуть настоящий ник') : '')
@@ -3061,7 +3093,8 @@
             nickMenu.addEventListener('click', ev => {
                 const b = ev.target.closest('button');
                 if(!b) return;
-                if(b.dataset.nm === 'mention'){
+                if(b.dataset.nm === 'reply'){ closeNickMenu(); replyToRow(replyRow); }
+                else if(b.dataset.nm === 'mention'){
                     insertComposerText(`@${name} `);
                     selectedMention = { platform, name, userId };
                     closeNickMenu();
@@ -3119,6 +3152,7 @@
             clone.classList.remove('reply-target', 'awaiting', 'highlighted');
             clone.style.setProperty('--depth', depth);
             clone.querySelector('.mod')?.remove();
+            clone.querySelector('.msg-reply')?.remove();
             clone.querySelector('.reply')?.remove();
             if(id === currentId) clone.classList.add('thread-current');
             const jump = document.createElement('button');
@@ -3204,6 +3238,8 @@
         });
 
         chat.addEventListener('click', e => {
+            const rb = e.target.closest('.msg-reply');
+            if(rb){ replyToRow(rb.closest('.msg')); return; }
             const modName = e.target.closest('.mod-name');
             if(modName){
                 openHistory(modName.dataset.name || modName.textContent.trim(), modName.dataset.plat || 'vk', modName.dataset.userid || '');
@@ -3550,8 +3586,12 @@
 
         function setComposeReply(reply=null){
             selectedReply = reply;
+            chat.querySelectorAll('.msg.replying').forEach(el => el.classList.remove('replying'));
+            if(reply?.id) chat.querySelector(`.msg[data-id="${CSS.escape(reply.id)}"]`)?.classList.add('replying');
             replyCompose.classList.toggle('on', !!reply);
-            replyComposeText.textContent = reply ? `Ответ ${reply.platform === 'kick' ? 'Kick' : 'VK'} @${reply.name}: ${reply.preview || ''}` : '';
+            replyComposeText.innerHTML = reply
+                ? `<b>Ответ ${esc(displayName(reply.platform, reply.name, reply.userId || ''))}</b> <span class="rc-preview">${esc(reply.preview || '')}</span>`
+                : '';
             document.getElementById('send-message').title = reply
                 ? `Ответить в ${reply.platform === 'kick' ? 'Kick' : 'VK'}`
                 : defaultSendTitle();
@@ -3563,6 +3603,7 @@
             const start = messageInput.selectionStart ?? messageInput.value.length;
             const end = messageInput.selectionEnd ?? start;
             messageInput.setRangeText(text, start, end, 'end');
+            autosizeInput();
             messageInput.focus();
         }
 
@@ -3648,6 +3689,7 @@
                 const failed = settled.filter(x => x.status === 'rejected');
                 if(failed.length === settled.length) throw failed[0].reason;
                 messageInput.value = '';
+                autosizeInput();
                 selectedMention = null;
                 selectedTemplate = null;
                 composeEmotePlatform = '';
@@ -3880,6 +3922,15 @@
                 else sendChoice.classList.add('open');
             }
         });
+        // поле растёт вместе с текстом (до ~6 строк), потом прокручивается
+        function autosizeInput(){
+            messageInput.style.height = 'auto';
+            const max = 150;
+            messageInput.style.height = Math.min(max, messageInput.scrollHeight + 2) + 'px';
+            messageInput.style.overflowY = messageInput.scrollHeight + 2 > max ? 'auto' : 'hidden';
+        }
+        messageInput.addEventListener('input', autosizeInput);
+        window.addEventListener('resize', autosizeInput);
         messageInput.addEventListener('input', () => {
             selectedTemplate = null;
             if(!messageInput.value.trim()) composeEmotePlatform = '';
