@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Merged Chat — обновление</title>
+<link rel="stylesheet" href="ui.css">
+</head>
+<body class="page">
+  <main class="sheet">
+    <h1><img src="icons/48.png" alt="">Merged Chat <span class="ver" id="ver"></span></h1>
+
+    <section>
+      <div class="group">
+        <div class="group-title"><strong id="title">Проверяю обновления…</strong></div>
+        <div id="versions"></div>
+        <p id="notes" class="note"></p>
+      </div>
+    </section>
+
+    <section id="steps" hidden>
+      <h2>Как обновить</h2>
+      <ol>
+        <li>Скачай архив: <button id="download" class="btn accent">Скачать архив</button></li>
+        <li>Открой его и скопируй содержимое папки <code>extension</code> в папку расширения, заменив файлы.<br>
+          <span class="note">Папку не удаляй и не меняй — тогда переименования и настройки останутся на месте.</span></li>
+        <li>Нажми: <button id="reload" class="btn">Перезапустить расширение</button></li>
+      </ol>
+    </section>
+
+    <p id="status" class="status"></p>
+  </main>
+  <script type="module" src="theme.js"></script>
+  <script type="module" src="updater.js"></script>
+</body>
+</html>

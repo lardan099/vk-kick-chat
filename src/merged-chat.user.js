@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Merged Chat (Kick + VK Play Live)
 // @namespace    grpzdc.mergedchat
-// @version      6.60
+// @version      6.61
 // @description  Перехватывает WebSocket реальных чатов Kick и VK Play Live, собирает все сообщения и рисует единую ленту своим дизайном. Сохраняет весь функционал родных чатов (авторизация, бан и т.д.).
 // @match        https://kick.com/popout/*/chat*
 // @match        https://dashboard.kick.com/*
@@ -2600,6 +2600,7 @@
             const buttons = presets.map(([min, label]) => `<button data-uact="${min === 'stream' ? 'stream-timeout' : 'timeout'}" data-min="${esc(min)}">${esc(label)}</button>`).join('');
             return `<div class="hist-actions"><div class="seg" role="group" aria-label="Тайм-аут"><span class="seg-l">${HIST_ICONS.clock}Тайм-аут</span>${buttons}`
                 + `</div><span class="sp"></span>`
+                + `<button type="button" data-ludka title="Лудка на бан: 50/50">🎰 Лудка</button>`
                 + `<button data-uact="${unbanAct}" title="Снять бан и тайм-аут">${HIST_ICONS.undo}Снять</button>`
                 + `<button class="danger" data-uact="ban" title="Забанить навсегда (нажать два раза)">${HIST_ICONS.ban}<span>Бан</span></button></div>`
                 + `<form class="custom-to"><span class="ct-l">Свой срок</span>${durationPickerHtml()}<button type="submit" class="go" disabled>Тайм-аут</button></form>`;
@@ -2832,6 +2833,7 @@
                 if(btn && histArmed(btn)) { histDisarm(btn); runKickHistoryAction(btn); }
             });
             histWireCustomTimeout(w, runKickHistoryAction);
+            w.document.querySelector('[data-ludka]')?.addEventListener('click', () => openBanRoulette(w.document, { platform:'kick', name, userId:'' }, (text, bad) => histNotice(w, text, bad)));
             let loading = false;
             let done = false;
             let cursor = '0';
@@ -2980,6 +2982,7 @@
                 if(btn && histArmed(btn)) { histDisarm(btn); runVkHistoryAction(btn); }
             });
             histWireCustomTimeout(w, runVkHistoryAction);
+            w.document.querySelector('[data-ludka]')?.addEventListener('click', () => openBanRoulette(w.document, { platform:'vk', name, userId }, (text, bad) => histNotice(w, text, bad)));
             let after = '';
             let loading = false;
             let done = false;
@@ -3092,7 +3095,8 @@
                 history: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
                 highlight: svg('<path d="m9 11-5 5v4h4l5-5"/><path d="m14 6 4 4"/><path d="m12 8 4 4 4-4-4-4-4 4Z"/>'),
                 wait: svg('<path d="M6 3h12M6 21h12"/><path d="M7 3c0 5 10 5 10 9s-10 4-10 9"/><path d="M17 3c0 5-10 5-10 9s10 4 10 9"/>'),
-                done: svg('<path d="m5 12 5 5 9-10"/>')
+                done: svg('<path d="m5 12 5 5 9-10"/>'),
+                ludka: svg('<rect x="3.5" y="3.5" width="17" height="17" rx="3.5"/><circle cx="8.5" cy="8.5" r="1.2"/><circle cx="15.5" cy="15.5" r="1.2"/><circle cx="12" cy="12" r="1.2"/>')
             };
             const item = (nm, icon, text, extra = '') => `<button class="nm-item${extra}" data-nm="${nm}">${icon}<span>${text}</span></button>`;
             // открыли с ника в ленте — можно ответить именно на это сообщение
@@ -3107,6 +3111,7 @@
                 + item('rename', NM_ICON.rename, alias ? 'Изменить имя' : 'Переименовать')
                 + (alias ? item('rename-reset', NM_ICON.reset, 'Вернуть настоящий ник') : '')
                 + item('history', NM_ICON.history, 'История и модерация')
+                + item('ludka', NM_ICON.ludka, 'Лудка на бан')
                 + `<div class="nm-sep"></div>`
                 + `<div class="nm-hl" title="Выделять все сообщения этого человека">${NM_ICON.highlight}<span class="nm-hl-label">Выделить</span>`
                     + (highlight ? `<button class="nm-hl-off" data-nm="hl-off" title="Снять выделение">Снять</button>` : '')
@@ -3163,6 +3168,7 @@
                     closeNickMenu();
                 }
                 else if(b.dataset.nm === 'history'){ closeNickMenu(); openHistory(name, platform, userId); }
+                else if(b.dataset.nm === 'ludka'){ closeNickMenu(); openBanRoulette(document, { platform, name, userId }); }
                 else if(b.dataset.nm === 'hl'){ saveUserHighlight(platform, name, userId, b.dataset.color || ''); refreshHighlightClasses(); closeNickMenu(); }
                 else if(b.dataset.nm === 'hl-off'){ saveUserHighlight(platform, name, userId, ''); refreshHighlightClasses(); closeNickMenu(); }
                 else if(b.dataset.nm === 'wait'){ markWaiting(platform, name, userId, !waiting); closeNickMenu(); }
@@ -3331,6 +3337,160 @@
             }
             el.textContent = text;
             el.classList.toggle('bad', bad);
+        }
+        // --- ЛУДКА НА БАН: барабан из 8 равных секторов, 4 «БАН» и 4 «МИМО» — шанс ровно 50/50 ---
+        const LUDKA_SECTORS = 8;
+        const LUDKA_CSS = `
+            .ludka-back{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:12px;
+                background:color-mix(in srgb,var(--bg,#111) 70%,transparent);backdrop-filter:blur(2px);animation:ludka-in .14s ease-out}
+            .ludka{width:min(340px,100%);max-height:calc(100vh - 24px);overflow:auto;display:grid;gap:10px;padding:14px;border:1px solid var(--border,#444);
+                border-radius:14px;background:var(--panel,#181a1b);color:var(--text,#eee);font:13px/1.4 Inter,system-ui,Arial,sans-serif;
+                box-shadow:0 18px 50px rgba(0,0,0,.4)}
+            .ludka-head{display:flex;align-items:center;gap:8px}
+            .ludka-head b{font-size:15px;letter-spacing:.02em}
+            .ludka-head span{min-width:0;color:var(--muted,#999);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+            .ludka-x{margin-left:auto;width:28px;height:28px;border:0;border-radius:8px;background:transparent;color:var(--muted,#999);font-size:18px;cursor:pointer}
+            .ludka-x:hover{background:var(--surface-3,#2a2a2a);color:var(--text,#eee)}
+            .ludka-dur{display:flex;flex-wrap:wrap;gap:5px}
+            .ludka-dur button{height:28px;padding:0 10px;border:1px solid var(--border,#444);border-radius:7px;background:var(--surface-1,#1a1a1a);
+                color:var(--text,#eee);font:inherit;font-weight:700;cursor:pointer;transition:background-color .1s,transform .08s}
+            .ludka-dur button:hover{background:var(--surface-3,#2a2a2a)}
+            .ludka-dur button[aria-pressed=true]{border-color:var(--accent,#7a6337);background:var(--accent-soft,rgba(0,0,0,.1))}
+            .ludka-custom{display:flex;align-items:center;gap:5px;color:var(--muted,#999);font-size:12px}
+            .ludka-custom input,.ludka-custom select{height:28px;border:1px solid var(--border,#444);border-radius:7px;background:var(--surface-0,#111);
+                color:var(--text,#eee);font:inherit;padding:0 7px}
+            .ludka-custom input{width:66px}
+            .ludka-wheel{position:relative;width:236px;height:236px;margin:4px auto 0}
+            .ludka-wheel svg{width:100%;height:100%;display:block;transform:rotate(0deg);transition:transform 5s cubic-bezier(.12,.62,.08,1)}
+            .ludka-wheel text{font:800 13px Inter,system-ui,sans-serif;letter-spacing:.06em;fill:#fff;text-anchor:middle;dominant-baseline:middle}
+            .ludka-pin{position:absolute;left:50%;top:-6px;width:0;height:0;transform:translateX(-50%);border:11px solid transparent;
+                border-top:20px solid var(--accent,#efdbb2);filter:drop-shadow(0 2px 2px rgba(0,0,0,.4));z-index:1}
+            .ludka-hub{position:absolute;left:50%;top:50%;width:40px;height:40px;transform:translate(-50%,-50%);border-radius:50%;
+                background:var(--panel,#181a1b);border:3px solid var(--accent,#efdbb2);display:grid;place-items:center;font-size:16px}
+            .ludka-odds{text-align:center;color:var(--muted,#999);font-size:11px}
+            .ludka-go{height:40px;border:1px solid var(--accent-dark,#5c4825);border-radius:10px;background:var(--accent,#7a6337);
+                color:var(--accent-contrast,#fff);font:inherit;font-size:15px;font-weight:800;letter-spacing:.04em;cursor:pointer;transition:filter .1s,transform .08s}
+            .ludka-go:hover{filter:brightness(1.08)}
+            .ludka-go:active{transform:scale(.98)}
+            .ludka-go:disabled{opacity:.55;cursor:default;transform:none}
+            .ludka-dry{display:flex;align-items:center;gap:7px;color:var(--muted,#999);font-size:12px;cursor:pointer}
+            .ludka-res{min-height:24px;text-align:center;font-size:16px;font-weight:800}
+            .ludka-res.ban{color:#ff4d5e;animation:ludka-pop .3s ease-out}
+            .ludka-res.miss{color:#3fc76a;animation:ludka-pop .3s ease-out}
+            .ludka-res small{display:block;font-size:12px;font-weight:600;color:var(--muted,#999)}
+            @keyframes ludka-in{from{opacity:0}to{opacity:1}}
+            @keyframes ludka-pop{0%{transform:scale(.8);opacity:0}60%{transform:scale(1.08)}100%{transform:none;opacity:1}}
+            @media (prefers-reduced-motion:reduce){.ludka-wheel svg{transition-duration:.6s}}`;
+        // честный случайный сектор: 2^32 делится на 8 без остатка, поэтому остаток равномерный
+        function ludkaRandom(n){
+            const a = new Uint32Array(1);
+            crypto.getRandomValues(a);
+            return a[0] % n;
+        }
+        function ludkaWheelSvg(){
+            const r = 100, c = 110, step = 360 / LUDKA_SECTORS;
+            const pt = deg => { const t = (deg - 90) * Math.PI / 180; return [c + r * Math.cos(t), c + r * Math.sin(t)]; };
+            let out = '';
+            for(let i = 0; i < LUDKA_SECTORS; i++){
+                const [x1, y1] = pt(i * step), [x2, y2] = pt((i + 1) * step), ban = i % 2 === 0;
+                out += `<path d="M${c} ${c}L${x1.toFixed(2)} ${y1.toFixed(2)}A${r} ${r} 0 0 1 ${x2.toFixed(2)} ${y2.toFixed(2)}Z" fill="${ban ? '#d7263d' : '#1f8a4c'}" stroke="rgba(0,0,0,.35)" stroke-width="1.5"/>`;
+                const mid = i * step + step / 2, [tx, ty] = (() => { const t = (mid - 90) * Math.PI / 180; return [c + r * .64 * Math.cos(t), c + r * .64 * Math.sin(t)]; })();
+                out += `<text x="${tx.toFixed(2)}" y="${ty.toFixed(2)}" transform="rotate(${mid} ${tx.toFixed(2)} ${ty.toFixed(2)})">${ban ? 'БАН' : 'МИМО'}</text>`;
+            }
+            return `<svg viewBox="0 0 220 220" aria-hidden="true"><circle cx="${c}" cy="${c}" r="${r + 6}" fill="var(--surface-3,#2a2a2a)"/>${out}</svg>`;
+        }
+        // target: { platform, name, userId }; doc — документ ленты или окна истории; onDone(text, bad) — куда написать итог
+        function openBanRoulette(doc, target, onDone){
+            if(!doc.getElementById('ludka-css')){
+                const st = doc.createElement('style'); st.id = 'ludka-css'; st.textContent = LUDKA_CSS; doc.head.appendChild(st);
+            }
+            doc.querySelector('.ludka-back')?.remove();
+            const shown = displayName(target.platform, target.name, target.userId || '');
+            const back = doc.createElement('div');
+            back.className = 'ludka-back';
+            const presets = [[5, '5м'], [10, '10м'], [30, '30м'], [60, '1ч'], [360, '6ч'], [1440, '1д'], [10080, '1нед']];
+            back.innerHTML = `<div class="ludka" role="dialog" aria-label="Лудка на бан">
+                <div class="ludka-head"><b>🎰 ЛУДКА НА БАН</b><span>${esc(shown)}</span><button class="ludka-x" title="Закрыть" aria-label="Закрыть">×</button></div>
+                <div class="ludka-dur" role="group" aria-label="Срок бана">${presets.map(([m, l]) => `<button type="button" data-min="${m}" aria-pressed="${m === 60}">${l}</button>`).join('')}</div>
+                <label class="ludka-custom">свой срок <input type="number" min="1" step="1" placeholder="—"><select><option value="1">мин</option><option value="60">ч</option><option value="1440">дн</option></select></label>
+                <div class="ludka-wheel"><div class="ludka-pin"></div>${ludkaWheelSvg()}<div class="ludka-hub">🎲</div></div>
+                <div class="ludka-odds">шанс бана ровно 50% · 8 равных секторов</div>
+                <button type="button" class="ludka-go">КРУТИТЬ · бан на 1 ч</button>
+                <label class="ludka-dry"><input type="checkbox"> просто покрутить, без бана</label>
+                <div class="ludka-res" role="status" aria-live="polite"></div>
+            </div>`;
+            doc.body.appendChild(back);
+            const $l = s => back.querySelector(s);
+            const svg = $l('svg'), go = $l('.ludka-go'), res = $l('.ludka-res'), dry = $l('.ludka-dry input');
+            const customNum = $l('.ludka-custom input'), customUnit = $l('.ludka-custom select');
+            let minutes = 60, rotation = 0, spinning = false;
+            const label = () => go.textContent = spinning ? 'КРУТИТСЯ…' : `КРУТИТЬ · ${dry.checked ? 'без бана' : 'бан на ' + humanDuration(minutes)}`;
+            const setPreset = m => { minutes = m; customNum.value = ''; back.querySelectorAll('[data-min]').forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.min) === m))); label(); };
+            back.querySelectorAll('[data-min]').forEach(b => b.addEventListener('click', () => !spinning && setPreset(Number(b.dataset.min))));
+            const fromCustom = () => {
+                const n = Math.floor(Number(customNum.value));
+                if(!n || n < 1) { setPreset(60); return; }
+                minutes = Math.min(KICK_MAX_TIMEOUT_MINUTES, n * Number(customUnit.value));
+                back.querySelectorAll('[data-min]').forEach(b => b.setAttribute('aria-pressed', 'false'));
+                label();
+            };
+            customNum.addEventListener('input', fromCustom);
+            customUnit.addEventListener('change', fromCustom);
+            dry.addEventListener('change', label);
+            const close = () => { if(!spinning) back.remove(); };
+            $l('.ludka-x').addEventListener('click', close);
+            back.addEventListener('click', e => { if(e.target === back) close(); });
+            doc.addEventListener('keydown', function esc_(e){ if(e.key === 'Escape'){ close(); if(!back.isConnected) doc.removeEventListener('keydown', esc_); } });
+            go.addEventListener('click', () => {
+                if(spinning) return;
+                spinning = true; go.disabled = true; res.className = 'ludka-res'; res.textContent = ''; label();
+                const step = 360 / LUDKA_SECTORS;
+                const sector = ludkaRandom(LUDKA_SECTORS);
+                const inside = (0.15 + (ludkaRandom(1000) / 1000) * 0.7) * step; // куда внутри сектора — подальше от границ
+                const angle = sector * step + inside;                           // угол сектора, который встанет под стрелку
+                const base = rotation + 360 * 6;
+                rotation = base + ((((-angle - base) % 360) + 360) % 360);
+                const banned = sector % 2 === 0;
+                const fixedMinutes = minutes, isDry = dry.checked;
+                svg.style.transform = `rotate(${rotation}deg)`;
+                let finished = false;
+                const finish = async () => {
+                    if(finished) return; finished = true;
+                    if(!banned){
+                        res.className = 'ludka-res miss'; res.innerHTML = 'МИМО 🍀<small>повезло</small>';
+                        if(onDone) onDone(`Лудка: ${shown} — мимо`, false);
+                    } else if(isDry){
+                        res.className = 'ludka-res ban'; res.innerHTML = `БАН на ${esc(humanDuration(fixedMinutes))}<small>без бана — просто покрутили</small>`;
+                    } else {
+                        res.className = 'ludka-res ban'; res.innerHTML = `БАН на ${esc(humanDuration(fixedMinutes))}<small>выдаю…</small>`;
+                        try {
+                            await timeoutUser(target.platform, target.name, target.userId, fixedMinutes, 'лудка');
+                            res.innerHTML = `БАН на ${esc(humanDuration(fixedMinutes))}<small>выдан</small>`;
+                            if(onDone) onDone(`Лудка: ${shown} — тайм-аут ${humanDuration(fixedMinutes)}`, false);
+                        } catch(err){
+                            res.innerHTML = `БАН на ${esc(humanDuration(fixedMinutes))}<small>не выдался: ${esc(err.message || err)}</small>`;
+                            if(onDone) onDone('Лудка: не вышло выдать бан — ' + (err.message || err), true);
+                        }
+                    }
+                    spinning = false; go.disabled = false; label();
+                };
+                svg.addEventListener('transitionend', finish, { once:true });
+                setTimeout(finish, 5600); // если transitionend не пришёл (вкладка в фоне)
+            });
+            label();
+            go.focus();
+        }
+        // тайм-аут человеку по платформе (для лудки; сообщение в ленте — как у обычной модерации)
+        async function timeoutUser(platform, name, userId, minutes, why=''){
+            if(platform === 'kick'){
+                await kickApi('POST', `https://kick.com/api/v2/channels/${KICK_SLUG}/bans`, { duration:minutes, banned_username:name, permanent:false });
+            } else {
+                if(!userId) throw new Error('нет VK id');
+                await vkApi('PUT', `https://api.live.vkvideo.ru/v1/channel/${KICK_SLUG}/public_video_stream/ban/stream/slot/default`, {
+                    user_id:userId, period:String(minutes * 60), by_stream:'false', is_permanent:'false'
+                });
+            }
+            showModeratorAction(platform, name, `${why ? why + ': ' : ''}тайм-аут ${formatDuration(minutes)}`);
         }
         function showModeratorAction(platform, name, action){
             grantBothAccess(`successful ${platform} moderation`);

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Перенос из Tampermonkey — Merged Chat</title>
+<link rel="stylesheet" href="ui.css">
+</head>
+<body class="page">
+  <div class="sheet transfer">
+    <h1><img src="icons/48.png" alt="">Перенос из Tampermonkey</h1>
+    <p class="note" id="now">Сейчас в расширении: …</p>
+
+    <section>
+      <h2>1. Достань данные из Tampermonkey</h2>
+      <div class="how">
+        <div class="how-item">
+          <strong>Вариант А — скопировать</strong>
+          <ol>
+            <li>Значок Tampermonkey → «Панель управления».</li>
+            <li>Открой скрипт <b>Merged Chat</b> → вкладка <b>«Хранилище»</b>.<br>
+              <span class="note">Нет такой вкладки — «Настройки» → «Режим конфигурации»: «Продвинутый».</span></li>
+            <li>Щёлкни в текст, <code>Ctrl+A</code>, <code>Ctrl+C</code> и вставь ниже.</li>
+          </ol>
+        </div>
+        <div class="how-item">
+          <strong>Вариант Б — файлом</strong>
+          <ol>
+            <li>Панель управления Tampermonkey → «Утилиты».</li>
+            <li>«Экспорт» в строке «Файл» (не zip) — сохранится на компьютер.</li>
+            <li>Перетащи этот файл сюда.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>2. Вставь или перетащи сюда</h2>
+      <div id="drop" class="drop">
+        <textarea id="paste" spellcheck="false" placeholder="Вставь сюда текст из вкладки «Хранилище» — или перетащи файл экспорта"></textarea>
+      </div>
+      <div class="actions">
+        <label class="btn file">Выбрать файл…<input type="file" id="file" accept=".json,.txt,application/json,text/plain" hidden></label>
+        <button id="go" class="btn accent" disabled>Перенести</button>
+      </div>
+      <label class="check"><input type="checkbox" id="theirs"><span>Если ник уже переименован у меня — взять имя из Tampermonkey<small>по умолчанию твои переименования остаются как есть</small></span></label>
+      <div id="result" class="result" hidden></div>
+    </section>
+
+    <section>
+      <h2>3. Потом</h2>
+      <ol>
+        <li>Выключи <b>Merged Chat</b> в Tampermonkey (переключатель в списке скриптов). Пока он включён, он перехватывает окно чата — и VK там нет.</li>
+        <li>Закрой и заново открой чат.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Запасная копия</h2>
+      <p class="note">Переименования, выделения и шаблоны в файл — пригодится, если переустановишь расширение. Восстанавливается здесь же.</p>
+      <div class="actions"><button id="backup" class="btn">Сохранить копию в файл</button></div>
+    </section>
+  </div>
+  <script type="module" src="theme.js"></script>
+  <script type="module" src="transfer.js"></script>
+</body>
+</html>
