@@ -2,3 +2,5 @@ node_modules/
 *.log
 .DS_Store
 Thumbs.db
+# распакованные архивы с GitHub (ручное обновление) — не часть исходников
+vk-kick-chat-main/

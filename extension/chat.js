@@ -6,7 +6,7 @@ if (MC_EXT.skip) return;
 // ==UserScript==
 // @name         Merged Chat (Kick + VK Play Live)
 // @namespace    grpzdc.mergedchat
-// @version      6.63
+// @version      6.64
 // @description  Перехватывает WebSocket реальных чатов Kick и VK Play Live, собирает все сообщения и рисует единую ленту своим дизайном. Сохраняет весь функционал родных чатов (авторизация, бан и т.д.).
 // @match        https://kick.com/popout/*/chat*
 // @match        https://dashboard.kick.com/*
@@ -2928,7 +2928,7 @@ if (MC_EXT.skip) return;
             const userColor = rememberedColor('vk', name, userId) || '#4da3ff';
             const page = histPage(`VK: ${name}`,
                 histHead({ name, color:userColor, platform:'vk', meta:'VK · загружаю…',
-                    actions:histActions([['10','10м'],['60','1ч'],['stream','До стрима']], 'clear') }),
+                    actions:histActions([['10','10м'],['60','1ч'],['1440','1д'],['stream','До стрима']], 'clear') }),
                 '', '<button id="more">Ещё</button>');
             w.document.open(); w.document.write(page); w.document.close();
             const wrap = w.document.getElementById('wrap');
@@ -2948,13 +2948,7 @@ if (MC_EXT.skip) return;
                     } else if(act === 'timeout'){
                         let min = btn.dataset.min;
                         min = durationToMinutes(min, 'minute');
-                        if(!VK_TIMEOUT_MINUTES.includes(min)) throw new Error(VK_TIMEOUT_NOTE);
-                        await vkApi('PUT', `https://api.live.vkvideo.ru/v1/channel/${KICK_SLUG}/public_video_stream/ban/stream/slot/default`, {
-                            user_id:userId,
-                            period:String(min * 60),
-                            by_stream:'false',
-                            is_permanent:'false'
-                        });
+                        await vkTimeout(userId, min);
                         histNotice(w, `Тайм-аут ${formatDuration(min)} — готово`);
                     } else if(act === 'stream-timeout'){
                         await vkApi('PUT', `https://api.live.vkvideo.ru/v1/channel/${KICK_SLUG}/public_video_stream/ban/stream/slot/default`, {
@@ -2987,8 +2981,6 @@ if (MC_EXT.skip) return;
                 const btn = e.target.closest('[data-uact],[data-hact]');
                 if(btn && histArmed(btn)) { histDisarm(btn); runVkHistoryAction(btn); }
             });
-            // у VK только 10 мин, 1 ч и до конца стрима — строку «свой срок» заменяем пояснением
-            w.document.querySelector('.custom-to')?.replaceWith(Object.assign(w.document.createElement('p'), { className:'hm', textContent:VK_TIMEOUT_NOTE }));
             histWireCustomTimeout(w, runVkHistoryAction);
             w.document.querySelector('[data-ludka]')?.addEventListener('click', () => openBanRoulette(w.document, { platform:'vk', name, userId }, (text, bad) => histNotice(w, text, bad)));
             let after = '';
@@ -3348,8 +3340,19 @@ if (MC_EXT.skip) return;
         }
         // VK API принимает тайм-аут только на 10 минут, 1 час или «до конца стрима» (так и в интерфейсе VK);
         // любой другой period отвечает 400 invalid_param
-        const VK_TIMEOUT_MINUTES = [10, 60];
-        const VK_TIMEOUT_NOTE = 'VK даёт тайм-аут только на 10 мин, 1 ч или до конца стрима';
+        // Тайм-аут VK: срок в секундах (period) или «до конца стрима» (by_stream). В интерфейсе VK только 10 мин и 1 ч,
+        // но API принимает и другие (сутки проверены на живом канале). Если срок не примут — VK отвечает 400 invalid_param.
+        async function vkTimeout(userId, minutes){
+            if(!userId) throw new Error('нет VK id');
+            try {
+                await vkApi('PUT', `https://api.live.vkvideo.ru/v1/channel/${KICK_SLUG}/public_video_stream/ban/stream/slot/default`, minutes === 'stream'
+                    ? { user_id:userId, by_stream:'true', is_permanent:'false' }
+                    : { user_id:userId, period:String(minutes * 60), by_stream:'false', is_permanent:'false' });
+            } catch(err) {
+                if(/invalid_param/.test(String(err && err.message))) throw new Error(`VK не принял срок ${minutes === 'stream' ? 'до конца стрима' : humanDuration(minutes)} — попробуй 10 мин, 1 ч или 1 дн`);
+                throw err;
+            }
+        }
         // --- ЛУДКА НА БАН: барабан из 8 равных секторов, 4 «БАН» и 4 «МИМО» — шанс ровно 50/50 ---
         const LUDKA_SECTORS = 8;
         const LUDKA_CSS = `
@@ -3421,15 +3424,13 @@ if (MC_EXT.skip) return;
             const back = doc.createElement('div');
             back.className = 'ludka-back';
             const isVk = target.platform === 'vk';
-            const presets = isVk ? [[10, '10м'], [60, '1ч'], ['stream', 'до конца стрима']]
-                : [[5, '5м'], [10, '10м'], [30, '30м'], [60, '1ч'], [360, '6ч'], [1440, '1д'], [10080, '1нед']];
+            const presets = [[5, '5м'], [10, '10м'], [30, '30м'], [60, '1ч'], [360, '6ч'], [1440, '1д'], [10080, '1нед'], ...(isVk ? [['stream', 'до конца стрима']] : [])];
             const durLabel = m => m === 'stream' ? 'до конца стрима' : 'на ' + humanDuration(m);
-            // по умолчанию — сутки; у VK суток нет, самый долгий его тайм-аут — до конца стрима
-            const defMin = isVk ? 'stream' : 1440;
+            const defMin = 1440; // по умолчанию — сутки
             back.innerHTML = `<div class="ludka" role="dialog" aria-label="Лудка на бан">
                 <div class="ludka-head"><b>🎰 ЛУДКА НА БАН</b><span>${esc(shown)}</span><button class="ludka-x" title="Закрыть" aria-label="Закрыть">×</button></div>
                 <div class="ludka-dur" role="group" aria-label="Срок бана">${presets.map(([m, l]) => `<button type="button" data-min="${m}" aria-pressed="${m === defMin}">${l}</button>`).join('')}</div>
-                ${isVk ? `<div class="ludka-odds">${VK_TIMEOUT_NOTE}</div>` : `<label class="ludka-custom">свой срок <input type="number" min="1" step="1" placeholder="—"><select><option value="1">мин</option><option value="60">ч</option><option value="1440">дн</option></select></label>`}
+                <label class="ludka-custom">свой срок <input type="number" min="1" step="1" placeholder="—"><select><option value="1">мин</option><option value="60">ч</option><option value="1440">дн</option></select></label>
                 <div class="ludka-wheel"><div class="ludka-pin"></div>${ludkaWheelSvg()}<div class="ludka-hub">🎲</div></div>
                 <div class="ludka-odds">шанс бана ровно 50% · 8 равных секторов</div>
                 <button type="button" class="ludka-go">КРУТИТЬ · бан на 1 ч</button>
@@ -3503,11 +3504,7 @@ if (MC_EXT.skip) return;
             if(platform === 'kick'){
                 await kickApi('POST', `https://kick.com/api/v2/channels/${KICK_SLUG}/bans`, { duration:minutes, banned_username:name, permanent:false });
             } else {
-                if(!userId) throw new Error('нет VK id');
-                if(minutes !== 'stream' && !VK_TIMEOUT_MINUTES.includes(minutes)) throw new Error(VK_TIMEOUT_NOTE);
-                await vkApi('PUT', `https://api.live.vkvideo.ru/v1/channel/${KICK_SLUG}/public_video_stream/ban/stream/slot/default`, minutes === 'stream'
-                    ? { user_id:userId, by_stream:'true', is_permanent:'false' }
-                    : { user_id:userId, period:String(minutes * 60), by_stream:'false', is_permanent:'false' });
+                await vkTimeout(userId, minutes);
             }
             showModeratorAction(platform, name, `${why ? why + ': ' : ''}тайм-аут ${minutes === 'stream' ? 'до конца стрима' : formatDuration(minutes)}`);
         }
@@ -4280,14 +4277,14 @@ if (MC_EXT.skip) return;
                     <button data-min="60">1 час</button>
                     ${isVk ? '<button data-stream="1">До конца стрима</button>' : '<button data-min="1440">1 день</button><button data-min="10080">1 неделя</button>'}
                 </div>
-                ${isVk ? `<div class="tp-sub">${VK_TIMEOUT_NOTE}</div>` : `<div class="tp-custom">
+                <div class="tp-custom">
                     <div class="tp-sub">Свой срок</div>
                     ${durationPickerHtml()}
                     <button class="tp-set" disabled>Тайм-аут</button>
-                </div>`}`;
+                </div>`;
             document.body.appendChild(timeoutPop);
             const setBtn = timeoutPop.querySelector('.tp-set');
-            const picker = isVk ? { minutes:0 } : wireDurationPicker(timeoutPop.querySelector('.tp-custom'), m => {
+            const picker = wireDurationPicker(timeoutPop.querySelector('.tp-custom'), m => {
                 setBtn.disabled = !m;
                 setBtn.textContent = m ? `Тайм-аут на ${humanDuration(m)}` : 'Тайм-аут';
             });
@@ -4315,15 +4312,7 @@ if (MC_EXT.skip) return;
             flash(btn, '✓');
         }
         async function doVkTimeout(row, minutes, btn){
-            const userId = row.dataset.userid;
-            if(!userId) throw new Error('no VK user id');
-            if(!VK_TIMEOUT_MINUTES.includes(minutes)) throw new Error(VK_TIMEOUT_NOTE);
-            await vkApi('PUT', `https://api.live.vkvideo.ru/v1/channel/${KICK_SLUG}/public_video_stream/ban/stream/slot/default`, {
-                user_id:userId,
-                period:String(minutes * 60),
-                by_stream:'false',
-                is_permanent:'false'
-            });
+            await vkTimeout(row.dataset.userid, minutes);
             status(row, 'timeout ' + formatDuration(minutes));
             showModeratorAction('vk', row.dataset.name, 'тайм-аут ' + formatDuration(minutes));
             flash(btn, '✓');
