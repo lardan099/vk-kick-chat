@@ -1297,11 +1297,13 @@
             .badge.img{border-radius:3px}
             .name{margin-right:3px}
             /* время — поверх строки при наведении: в разметке строки места не занимает, текст не двигает */
-            .msg .ts{position:absolute;top:3px;right:32px;z-index:1;padding:1px 6px;border:1px solid var(--border);border-radius:6px;
-                background:var(--panel);color:var(--muted);font-size:11px;line-height:18px;font-variant-numeric:tabular-nums;
+            /* справа у строк постоянный край под время и ↩: текст туда не заходит, при наведении ничего не сдвигается */
+            #chat .msg{padding-right:66px}
+            html[data-no-time] #chat .msg{padding-right:32px}
+            .msg .ts{position:absolute;top:4px;right:31px;color:var(--muted);font-size:11px;line-height:18px;font-variant-numeric:tabular-nums;
                 pointer-events:none;user-select:none;opacity:0;transition:opacity .1s ease}
             .msg:hover>.ts{opacity:1}
-            .msg:not(:has(>.msg-reply))>.ts{right:4px}
+            .msg:not(:has(>.msg-reply))>.ts{right:6px}
             .thread-msg .ts{position:static;opacity:1;border:0;background:none;padding:0;margin-left:6px}
             html[data-no-time] .msg .ts{display:none}
             .reply,html[data-theme="light"] .reply{margin-left:26px;border-left:2px solid var(--accent-strong);color:var(--muted)}
