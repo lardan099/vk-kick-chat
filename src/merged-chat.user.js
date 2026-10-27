@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Merged Chat (Kick + VK Play Live)
 // @namespace    grpzdc.mergedchat
-// @version      6.62
+// @version      6.63
 // @description  Перехватывает WebSocket реальных чатов Kick и VK Play Live, собирает все сообщения и рисует единую ленту своим дизайном. Сохраняет весь функционал родных чатов (авторизация, бан и т.д.).
 // @match        https://kick.com/popout/*/chat*
 // @match        https://dashboard.kick.com/*
@@ -3419,9 +3419,11 @@
             const presets = isVk ? [[10, '10м'], [60, '1ч'], ['stream', 'до конца стрима']]
                 : [[5, '5м'], [10, '10м'], [30, '30м'], [60, '1ч'], [360, '6ч'], [1440, '1д'], [10080, '1нед']];
             const durLabel = m => m === 'stream' ? 'до конца стрима' : 'на ' + humanDuration(m);
+            // по умолчанию — сутки; у VK суток нет, самый долгий его тайм-аут — до конца стрима
+            const defMin = isVk ? 'stream' : 1440;
             back.innerHTML = `<div class="ludka" role="dialog" aria-label="Лудка на бан">
                 <div class="ludka-head"><b>🎰 ЛУДКА НА БАН</b><span>${esc(shown)}</span><button class="ludka-x" title="Закрыть" aria-label="Закрыть">×</button></div>
-                <div class="ludka-dur" role="group" aria-label="Срок бана">${presets.map(([m, l]) => `<button type="button" data-min="${m}" aria-pressed="${m === 60}">${l}</button>`).join('')}</div>
+                <div class="ludka-dur" role="group" aria-label="Срок бана">${presets.map(([m, l]) => `<button type="button" data-min="${m}" aria-pressed="${m === defMin}">${l}</button>`).join('')}</div>
                 ${isVk ? `<div class="ludka-odds">${VK_TIMEOUT_NOTE}</div>` : `<label class="ludka-custom">свой срок <input type="number" min="1" step="1" placeholder="—"><select><option value="1">мин</option><option value="60">ч</option><option value="1440">дн</option></select></label>`}
                 <div class="ludka-wheel"><div class="ludka-pin"></div>${ludkaWheelSvg()}<div class="ludka-hub">🎲</div></div>
                 <div class="ludka-odds">шанс бана ровно 50% · 8 равных секторов</div>
@@ -3433,14 +3435,14 @@
             const $l = s => back.querySelector(s);
             const svg = $l('svg'), go = $l('.ludka-go'), res = $l('.ludka-res'), dry = $l('.ludka-dry input');
             const customNum = $l('.ludka-custom input'), customUnit = $l('.ludka-custom select');
-            let minutes = 60, rotation = 0, spinning = false;
+            let minutes = defMin, rotation = 0, spinning = false;
             const label = () => go.textContent = spinning ? 'КРУТИТСЯ…' : `КРУТИТЬ · ${dry.checked ? 'без бана' : 'бан ' + durLabel(minutes)}`;
             const minOf = v => v === 'stream' ? 'stream' : Number(v);
             const setPreset = m => { minutes = m; if(customNum) customNum.value = ''; back.querySelectorAll('[data-min]').forEach(b => b.setAttribute('aria-pressed', String(minOf(b.dataset.min) === m))); label(); };
             back.querySelectorAll('[data-min]').forEach(b => b.addEventListener('click', () => !spinning && setPreset(minOf(b.dataset.min))));
             const fromCustom = () => {
                 const n = Math.floor(Number(customNum.value));
-                if(!n || n < 1) { setPreset(60); return; }
+                if(!n || n < 1) { setPreset(defMin); return; }
                 minutes = Math.min(KICK_MAX_TIMEOUT_MINUTES, n * Number(customUnit.value));
                 back.querySelectorAll('[data-min]').forEach(b => b.setAttribute('aria-pressed', 'false'));
                 label();
