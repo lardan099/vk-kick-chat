@@ -1,6 +1,6 @@
 {
-  "version": "6.60",
-  "notes": "Тёмная тема + PANTONE 7506 как на сайте",
+  "version": "6.61",
+  "notes": "Лудка на бан: барабан 50/50",
   "files": [
     {
       "path": "background.js",
@@ -9,8 +9,8 @@
     },
     {
       "path": "chat.js",
-      "sha256": "c5ddf98499ed269845550fbebbf8b3ffabf826693b21d7dde3e06e04812d6bb0",
-      "size": 323911
+      "sha256": "dc355452a7a378045b398b4b685d71a1143b0adf493d5ca01c6d637b1cecff87",
+      "size": 338393
     },
     {
       "path": "config.js",
@@ -64,7 +64,7 @@
     },
     {
       "path": "manifest.json",
-      "sha256": "029ceb5d557c346913be308b943a4ba921cab95728e26522facdb5342c25ee27",
+      "sha256": "9fc6663afd2b5a4720e854cdee95c5fb8af65b38f9e7be57a116c395aba35e50",
       "size": 2226
     },
     {

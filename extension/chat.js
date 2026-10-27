@@ -6,7 +6,7 @@ if (MC_EXT.skip) return;
 // ==UserScript==
 // @name         Merged Chat (Kick + VK Play Live)
 // @namespace    grpzdc.mergedchat
-// @version      6.61
+// @version      6.62
 // @description  Перехватывает WebSocket реальных чатов Kick и VK Play Live, собирает все сообщения и рисует единую ленту своим дизайном. Сохраняет весь функционал родных чатов (авторизация, бан и т.д.).
 // @match        https://kick.com/popout/*/chat*
 // @match        https://dashboard.kick.com/*
@@ -2948,6 +2948,7 @@ if (MC_EXT.skip) return;
                     } else if(act === 'timeout'){
                         let min = btn.dataset.min;
                         min = durationToMinutes(min, 'minute');
+                        if(!VK_TIMEOUT_MINUTES.includes(min)) throw new Error(VK_TIMEOUT_NOTE);
                         await vkApi('PUT', `https://api.live.vkvideo.ru/v1/channel/${KICK_SLUG}/public_video_stream/ban/stream/slot/default`, {
                             user_id:userId,
                             period:String(min * 60),
@@ -2986,6 +2987,8 @@ if (MC_EXT.skip) return;
                 const btn = e.target.closest('[data-uact],[data-hact]');
                 if(btn && histArmed(btn)) { histDisarm(btn); runVkHistoryAction(btn); }
             });
+            // у VK только 10 мин, 1 ч и до конца стрима — строку «свой срок» заменяем пояснением
+            w.document.querySelector('.custom-to')?.replaceWith(Object.assign(w.document.createElement('p'), { className:'hm', textContent:VK_TIMEOUT_NOTE }));
             histWireCustomTimeout(w, runVkHistoryAction);
             w.document.querySelector('[data-ludka]')?.addEventListener('click', () => openBanRoulette(w.document, { platform:'vk', name, userId }, (text, bad) => histNotice(w, text, bad)));
             let after = '';
@@ -3343,6 +3346,10 @@ if (MC_EXT.skip) return;
             el.textContent = text;
             el.classList.toggle('bad', bad);
         }
+        // VK API принимает тайм-аут только на 10 минут, 1 час или «до конца стрима» (так и в интерфейсе VK);
+        // любой другой period отвечает 400 invalid_param
+        const VK_TIMEOUT_MINUTES = [10, 60];
+        const VK_TIMEOUT_NOTE = 'VK даёт тайм-аут только на 10 мин, 1 ч или до конца стрима';
         // --- ЛУДКА НА БАН: барабан из 8 равных секторов, 4 «БАН» и 4 «МИМО» — шанс ровно 50/50 ---
         const LUDKA_SECTORS = 8;
         const LUDKA_CSS = `
@@ -3413,11 +3420,14 @@ if (MC_EXT.skip) return;
             const shown = displayName(target.platform, target.name, target.userId || '');
             const back = doc.createElement('div');
             back.className = 'ludka-back';
-            const presets = [[5, '5м'], [10, '10м'], [30, '30м'], [60, '1ч'], [360, '6ч'], [1440, '1д'], [10080, '1нед']];
+            const isVk = target.platform === 'vk';
+            const presets = isVk ? [[10, '10м'], [60, '1ч'], ['stream', 'до конца стрима']]
+                : [[5, '5м'], [10, '10м'], [30, '30м'], [60, '1ч'], [360, '6ч'], [1440, '1д'], [10080, '1нед']];
+            const durLabel = m => m === 'stream' ? 'до конца стрима' : 'на ' + humanDuration(m);
             back.innerHTML = `<div class="ludka" role="dialog" aria-label="Лудка на бан">
                 <div class="ludka-head"><b>🎰 ЛУДКА НА БАН</b><span>${esc(shown)}</span><button class="ludka-x" title="Закрыть" aria-label="Закрыть">×</button></div>
                 <div class="ludka-dur" role="group" aria-label="Срок бана">${presets.map(([m, l]) => `<button type="button" data-min="${m}" aria-pressed="${m === 60}">${l}</button>`).join('')}</div>
-                <label class="ludka-custom">свой срок <input type="number" min="1" step="1" placeholder="—"><select><option value="1">мин</option><option value="60">ч</option><option value="1440">дн</option></select></label>
+                ${isVk ? `<div class="ludka-odds">${VK_TIMEOUT_NOTE}</div>` : `<label class="ludka-custom">свой срок <input type="number" min="1" step="1" placeholder="—"><select><option value="1">мин</option><option value="60">ч</option><option value="1440">дн</option></select></label>`}
                 <div class="ludka-wheel"><div class="ludka-pin"></div>${ludkaWheelSvg()}<div class="ludka-hub">🎲</div></div>
                 <div class="ludka-odds">шанс бана ровно 50% · 8 равных секторов</div>
                 <button type="button" class="ludka-go">КРУТИТЬ · бан на 1 ч</button>
@@ -3429,9 +3439,10 @@ if (MC_EXT.skip) return;
             const svg = $l('svg'), go = $l('.ludka-go'), res = $l('.ludka-res'), dry = $l('.ludka-dry input');
             const customNum = $l('.ludka-custom input'), customUnit = $l('.ludka-custom select');
             let minutes = 60, rotation = 0, spinning = false;
-            const label = () => go.textContent = spinning ? 'КРУТИТСЯ…' : `КРУТИТЬ · ${dry.checked ? 'без бана' : 'бан на ' + humanDuration(minutes)}`;
-            const setPreset = m => { minutes = m; customNum.value = ''; back.querySelectorAll('[data-min]').forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.min) === m))); label(); };
-            back.querySelectorAll('[data-min]').forEach(b => b.addEventListener('click', () => !spinning && setPreset(Number(b.dataset.min))));
+            const label = () => go.textContent = spinning ? 'КРУТИТСЯ…' : `КРУТИТЬ · ${dry.checked ? 'без бана' : 'бан ' + durLabel(minutes)}`;
+            const minOf = v => v === 'stream' ? 'stream' : Number(v);
+            const setPreset = m => { minutes = m; if(customNum) customNum.value = ''; back.querySelectorAll('[data-min]').forEach(b => b.setAttribute('aria-pressed', String(minOf(b.dataset.min) === m))); label(); };
+            back.querySelectorAll('[data-min]').forEach(b => b.addEventListener('click', () => !spinning && setPreset(minOf(b.dataset.min))));
             const fromCustom = () => {
                 const n = Math.floor(Number(customNum.value));
                 if(!n || n < 1) { setPreset(60); return; }
@@ -3439,8 +3450,8 @@ if (MC_EXT.skip) return;
                 back.querySelectorAll('[data-min]').forEach(b => b.setAttribute('aria-pressed', 'false'));
                 label();
             };
-            customNum.addEventListener('input', fromCustom);
-            customUnit.addEventListener('change', fromCustom);
+            customNum?.addEventListener('input', fromCustom);
+            customUnit?.addEventListener('change', fromCustom);
             dry.addEventListener('change', label);
             const close = () => { if(!spinning) back.remove(); };
             $l('.ludka-x').addEventListener('click', close);
@@ -3465,15 +3476,15 @@ if (MC_EXT.skip) return;
                         res.className = 'ludka-res miss'; res.innerHTML = 'МИМО 🍀<small>повезло</small>';
                         if(onDone) onDone(`Лудка: ${shown} — мимо`, false);
                     } else if(isDry){
-                        res.className = 'ludka-res ban'; res.innerHTML = `БАН на ${esc(humanDuration(fixedMinutes))}<small>без бана — просто покрутили</small>`;
+                        res.className = 'ludka-res ban'; res.innerHTML = `БАН ${esc(durLabel(fixedMinutes))}<small>без бана — просто покрутили</small>`;
                     } else {
-                        res.className = 'ludka-res ban'; res.innerHTML = `БАН на ${esc(humanDuration(fixedMinutes))}<small>выдаю…</small>`;
+                        res.className = 'ludka-res ban'; res.innerHTML = `БАН ${esc(durLabel(fixedMinutes))}<small>выдаю…</small>`;
                         try {
                             await timeoutUser(target.platform, target.name, target.userId, fixedMinutes, 'лудка');
-                            res.innerHTML = `БАН на ${esc(humanDuration(fixedMinutes))}<small>выдан</small>`;
-                            if(onDone) onDone(`Лудка: ${shown} — тайм-аут ${humanDuration(fixedMinutes)}`, false);
+                            res.innerHTML = `БАН ${esc(durLabel(fixedMinutes))}<small>выдан</small>`;
+                            if(onDone) onDone(`Лудка: ${shown} — тайм-аут ${durLabel(fixedMinutes)}`, false);
                         } catch(err){
-                            res.innerHTML = `БАН на ${esc(humanDuration(fixedMinutes))}<small>не выдался: ${esc(err.message || err)}</small>`;
+                            res.innerHTML = `БАН ${esc(durLabel(fixedMinutes))}<small>не выдался: ${esc(err.message || err)}</small>`;
                             if(onDone) onDone('Лудка: не вышло выдать бан — ' + (err.message || err), true);
                         }
                     }
@@ -3491,11 +3502,12 @@ if (MC_EXT.skip) return;
                 await kickApi('POST', `https://kick.com/api/v2/channels/${KICK_SLUG}/bans`, { duration:minutes, banned_username:name, permanent:false });
             } else {
                 if(!userId) throw new Error('нет VK id');
-                await vkApi('PUT', `https://api.live.vkvideo.ru/v1/channel/${KICK_SLUG}/public_video_stream/ban/stream/slot/default`, {
-                    user_id:userId, period:String(minutes * 60), by_stream:'false', is_permanent:'false'
-                });
+                if(minutes !== 'stream' && !VK_TIMEOUT_MINUTES.includes(minutes)) throw new Error(VK_TIMEOUT_NOTE);
+                await vkApi('PUT', `https://api.live.vkvideo.ru/v1/channel/${KICK_SLUG}/public_video_stream/ban/stream/slot/default`, minutes === 'stream'
+                    ? { user_id:userId, by_stream:'true', is_permanent:'false' }
+                    : { user_id:userId, period:String(minutes * 60), by_stream:'false', is_permanent:'false' });
             }
-            showModeratorAction(platform, name, `${why ? why + ': ' : ''}тайм-аут ${formatDuration(minutes)}`);
+            showModeratorAction(platform, name, `${why ? why + ': ' : ''}тайм-аут ${minutes === 'stream' ? 'до конца стрима' : formatDuration(minutes)}`);
         }
         function showModeratorAction(platform, name, action){
             grantBothAccess(`successful ${platform} moderation`);
@@ -4266,18 +4278,18 @@ if (MC_EXT.skip) return;
                     <button data-min="60">1 час</button>
                     ${isVk ? '<button data-stream="1">До конца стрима</button>' : '<button data-min="1440">1 день</button><button data-min="10080">1 неделя</button>'}
                 </div>
-                <div class="tp-custom">
+                ${isVk ? `<div class="tp-sub">${VK_TIMEOUT_NOTE}</div>` : `<div class="tp-custom">
                     <div class="tp-sub">Свой срок</div>
                     ${durationPickerHtml()}
                     <button class="tp-set" disabled>Тайм-аут</button>
-                </div>`;
+                </div>`}`;
             document.body.appendChild(timeoutPop);
             const setBtn = timeoutPop.querySelector('.tp-set');
-            const picker = wireDurationPicker(timeoutPop.querySelector('.tp-custom'), m => {
+            const picker = isVk ? { minutes:0 } : wireDurationPicker(timeoutPop.querySelector('.tp-custom'), m => {
                 setBtn.disabled = !m;
                 setBtn.textContent = m ? `Тайм-аут на ${humanDuration(m)}` : 'Тайм-аут';
             });
-            timeoutPop.querySelector('.dp-num').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); setBtn.click(); } });
+            timeoutPop.querySelector('.dp-num')?.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); setBtn.click(); } });
             const r = btn.getBoundingClientRect();
             timeoutPop.style.left = Math.min(window.innerWidth - timeoutPop.offsetWidth - 6, Math.max(6, r.right - timeoutPop.offsetWidth)) + 'px';
             timeoutPop.style.top = Math.min(window.innerHeight - timeoutPop.offsetHeight - 6, r.bottom + 6) + 'px';
@@ -4303,6 +4315,7 @@ if (MC_EXT.skip) return;
         async function doVkTimeout(row, minutes, btn){
             const userId = row.dataset.userid;
             if(!userId) throw new Error('no VK user id');
+            if(!VK_TIMEOUT_MINUTES.includes(minutes)) throw new Error(VK_TIMEOUT_NOTE);
             await vkApi('PUT', `https://api.live.vkvideo.ru/v1/channel/${KICK_SLUG}/public_video_stream/ban/stream/slot/default`, {
                 user_id:userId,
                 period:String(minutes * 60),

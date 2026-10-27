@@ -1,6 +1,6 @@
 {
-  "version": "6.61",
-  "notes": "Лудка на бан: барабан 50/50",
+  "version": "6.62",
+  "notes": "VK: тайм-аут только 10 мин, 1 ч или до конца стрима — лудка и свой срок больше не падают",
   "files": [
     {
       "path": "background.js",
@@ -9,8 +9,8 @@
     },
     {
       "path": "chat.js",
-      "sha256": "dc355452a7a378045b398b4b685d71a1143b0adf493d5ca01c6d637b1cecff87",
-      "size": 338393
+      "sha256": "9ba38f3055b2f29c4435acf7bd4c417d6ce075e4132b06fef2d0b3d57d00878f",
+      "size": 340025
     },
     {
       "path": "config.js",
@@ -64,7 +64,7 @@
     },
     {
       "path": "manifest.json",
-      "sha256": "9fc6663afd2b5a4720e854cdee95c5fb8af65b38f9e7be57a116c395aba35e50",
+      "sha256": "4cb2cb00b4fc0b6134732840da7a4f0083ecbc81fed4057eae149f3d32fa5d82",
       "size": 2226
     },
     {
