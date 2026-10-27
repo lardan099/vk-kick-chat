@@ -1,6 +1,6 @@
 {
-  "version": "6.59",
-  "notes": "Время при наведении — в своём краю справа, не налезает на текст",
+  "version": "6.60",
+  "notes": "Тёмная тема + PANTONE 7506 как на сайте",
   "files": [
     {
       "path": "background.js",
@@ -9,8 +9,8 @@
     },
     {
       "path": "chat.js",
-      "sha256": "4a1d59f64ac318c0386cbadb7419217143d510e5571c4f655e8b9ae292cf0258",
-      "size": 322267
+      "sha256": "c5ddf98499ed269845550fbebbf8b3ffabf826693b21d7dde3e06e04812d6bb0",
+      "size": 323911
     },
     {
       "path": "config.js",
@@ -64,7 +64,7 @@
     },
     {
       "path": "manifest.json",
-      "sha256": "d3fea8b5310e63731b80497eddf090dd78e0069287a4bad9fbd0c6a2f6a0b15d",
+      "sha256": "029ceb5d557c346913be308b943a4ba921cab95728e26522facdb5342c25ee27",
       "size": 2226
     },
     {

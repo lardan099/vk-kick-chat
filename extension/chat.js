@@ -6,7 +6,7 @@ if (MC_EXT.skip) return;
 // ==UserScript==
 // @name         Merged Chat (Kick + VK Play Live)
 // @namespace    grpzdc.mergedchat
-// @version      6.59
+// @version      6.60
 // @description  Перехватывает WebSocket реальных чатов Kick и VK Play Live, собирает все сообщения и рисует единую ленту своим дизайном. Сохраняет весь функционал родных чатов (авторизация, бан и т.д.).
 // @match        https://kick.com/popout/*/chat*
 // @match        https://dashboard.kick.com/*
@@ -1212,6 +1212,11 @@ if (MC_EXT.skip) return;
             html[data-color-scheme="pantone"] .msg{background:transparent;box-shadow:none}
             html[data-color-scheme="pantone"] .mention{background:var(--surface-4);color:#3d3729;box-shadow:inset 0 0 0 1px var(--border)}
 
+            html[data-color-scheme="heritage"] body{background:var(--bg)}
+            html[data-color-scheme="heritage"] #chat{background:var(--panel)}
+            html[data-color-scheme="heritage"] #bar,html[data-color-scheme="heritage"] #composer{background:var(--bg);border-color:rgba(239,219,178,.08)}
+            html[data-color-scheme="heritage"] .reply{border-left-color:var(--border)}
+            html[data-color-scheme="heritage"] .mention{color:var(--accent);background:var(--accent-soft)}
             html[data-theme="aero"],html[data-theme="aero"] body{background:radial-gradient(circle at 10% 12%,#fff9 0 3%,transparent 7%),radial-gradient(circle at 78% 20%,#fff7 0 2%,transparent 6%),linear-gradient(180deg,#37bde9 0%,#9ceaff 48%,#eaffff 65%,#6ed267 66%,#2b9d48 100%);background-attachment:fixed}
             html[data-theme="aero"] #chat{background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(224,250,253,.14))}
             html[data-theme="aero"] #bar,html[data-theme="aero"] #settings-panel,html[data-theme="aero"] #composer{background:linear-gradient(180deg,rgba(255,255,255,.46),rgba(181,235,246,.20));backdrop-filter:blur(12px) saturate(1.5)}
@@ -1302,13 +1307,13 @@ if (MC_EXT.skip) return;
             .badge.img{border-radius:3px}
             .name{margin-right:3px}
             /* время — поверх строки при наведении: в разметке строки места не занимает, текст не двигает */
-            /* справа у строк постоянный край под время и ↩: текст туда не заходит, при наведении ничего не сдвигается */
-            #chat .msg{padding-right:66px}
-            html[data-no-time] #chat .msg{padding-right:32px}
-            .msg .ts{position:absolute;top:4px;right:31px;color:var(--muted);font-size:11px;line-height:18px;font-variant-numeric:tabular-nums;
-                pointer-events:none;user-select:none;opacity:0;transition:opacity .1s ease}
+            /* время и ↩ — плашкой над правым верхним углом строки (как в Discord): места в строке не занимают, текст не закрывают */
+            .msg .ts{position:absolute;top:-9px;right:34px;z-index:2;height:22px;padding:0 7px;border:1px solid var(--border);border-radius:6px;
+                background:var(--panel);color:var(--muted);font-size:11px;line-height:20px;font-variant-numeric:tabular-nums;
+                box-shadow:0 2px 6px rgba(0,0,0,.18);pointer-events:none;user-select:none;opacity:0;transition:opacity .1s ease}
             .msg:hover>.ts{opacity:1}
             .msg:not(:has(>.msg-reply))>.ts{right:6px}
+            #chat>.msg:first-child>.ts,#chat>.msg:first-child>.msg-reply{top:2px}
             .thread-msg .ts{position:static;opacity:1;border:0;background:none;padding:0;margin-left:6px}
             html[data-no-time] .msg .ts{display:none}
             .reply,html[data-theme="light"] .reply{margin-left:26px;border-left:2px solid var(--accent-strong);color:var(--muted)}
@@ -1346,7 +1351,7 @@ if (MC_EXT.skip) return;
             .timeout-pop .dp-range:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
 
             /* ---- Ответ на сообщение и растущее поле ввода ---- */
-            .msg-reply{position:absolute;top:2px;right:4px;width:24px;height:22px;display:none;place-items:center;padding:0;border:1px solid var(--border);
+            .msg-reply{position:absolute;top:-9px;right:6px;z-index:2;width:26px;height:22px;box-shadow:0 2px 6px rgba(0,0,0,.18);display:none;place-items:center;padding:0;border:1px solid var(--border);
                 border-radius:6px;background:var(--panel);color:var(--muted);cursor:pointer;transition:color .12s,background-color .12s,transform .1s}
             .msg-reply svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
             .msg:hover>.msg-reply,.msg-reply:focus-visible{display:grid}
@@ -1572,7 +1577,7 @@ if (MC_EXT.skip) return;
         const DEFAULT_ACCENT = 'pantone-7506';
         const DEFAULT_CUSTOM_PALETTE = { accent:'#53fc18', background:'#0a0a10', panel:'#13131a' };
         const ACCENT_PRESETS = [
-            { id:'pantone-7506', name:'PANTONE 7506 C · светлая', code:'7506', color:'#7a6337', preview:'#efdbb2', base:'#efdbb2', scheme:'pantone' },
+            { id:'pantone-7506', name:'PANTONE 7506 C', code:'7506', color:'#7a6337', preview:'#efdbb2', base:'#efdbb2', scheme:'pantone' },
             { id:'kick', name:'Kick', color:'#53fc18' },
             { id:'vk', name:'VK', color:'#2d8cff' },
             { id:'grpzdc', name:'GRPZDC', color:'#16824a' },
@@ -1671,9 +1676,8 @@ if (MC_EXT.skip) return;
             const skinNow = currentSkin();
             const preset=presetFor(value);
             if(skinNow){ /* тему держит скин */ }
-            else if(preset.scheme==='pantone'){
-                if(!['light','aero'].includes(document.documentElement.dataset.theme)) applyTheme('light');
-            } else if(preset.scheme==='custom'){
+            else if(preset.scheme==='pantone'){ /* 7506 есть и в тёмной, и в светлой теме — тему не трогаем */ }
+            else if(preset.scheme==='custom'){
                 if(document.documentElement.dataset.theme!=='aero') applyTheme(customIsLight()?'light':'dark');
             } else if(preset.scheme && !['dark','aero'].includes(document.documentElement.dataset.theme)) applyTheme('dark');
             const color=rgb(preset.color)||rgb('#7a6337'), tone=hsl(color), light=['light','aero'].includes(document.documentElement.dataset.theme), saturation=Math.min(30,Math.max(4,tone.s*.28));
@@ -1685,10 +1689,18 @@ if (MC_EXT.skip) return;
             set('--surface-0',hslColor(tone.h,saturation,light?97:6));set('--surface-1',hslColor(tone.h,saturation,light?99:9));set('--surface-2',hslColor(tone.h,saturation,light?94:12));set('--surface-3',hslColor(tone.h,saturation,light?90:16));set('--surface-4',hslColor(tone.h,saturation,light?86:21));
             if(preset.scheme==='legacy') Object.entries({'--bg':'#0a0a10','--panel':'#13131a','--border':'#262630','--text':'#efeff1','--muted':'#9d9dae','--surface-0':'#0d0d13','--surface-1':'#101016','--surface-2':'#15151d','--surface-3':'#222226','--surface-4':'#2d2d34'}).forEach(([key,val])=>set(key,val));
             if(preset.scheme==='matte') Object.entries({'--bg':'#030303','--panel':'#080808','--border':'#202020','--text':'#ededed','--muted':'#8b8b8b','--surface-0':'#050505','--surface-1':'#090909','--surface-2':'#0d0d0d','--surface-3':'#171717','--surface-4':'#222','--accent-bright':'#f2f2f2','--accent-dark':'#8a8a8a','--accent-contrast':'#050505','--pz-glow':'rgba(255,255,255,.08)'}).forEach(([key,val])=>set(key,val));
-            if(preset.scheme==='pantone') { const base=preset.base; Object.entries({'--bg':mix(base,'#ffffff',.68),'--panel':mix(base,'#ffffff',.88),'--border':mix(base,'#4c463b',.28),'--text':'#28251f','--muted':'#6d6659','--surface-0':mix(base,'#ffffff',.77),'--surface-1':mix(base,'#ffffff',.84),'--surface-2':mix(base,'#ffffff',.64),'--surface-3':mix(base,'#ffffff',.48),'--surface-4':mix(base,'#ffffff',.32)}).forEach(([key,val])=>set(key,val)); }
+            const heritage = preset.scheme==='pantone' && !light;
+            if(heritage) {
+                // тёмная редакция 7506 с сайта: сам 7506 — акцент на тёплом графите (значения из pz-palette.js)
+                Object.entries({'--accent':'#efdbb2','--accent-rgb':'239 219 178','--pz-glow':'rgba(239,219,178,.22)','--accent-soft':'rgba(239,219,178,.12)',
+                    '--accent-medium':'rgba(239,219,178,.22)','--accent-strong':'rgba(239,219,178,.45)','--accent-bright':'hsl(40 66% 88%)','--accent-dark':'hsl(40 39% 54%)',
+                    '--accent-contrast':'#1b170f','--bg':'#0f0e0c','--panel':'#171512','--border':'#2c2822','--text':'#f2ece1','--muted':'#a69d8d',
+                    '--surface-0':'#121110','--surface-1':'#171512','--surface-2':'#1e1b17','--surface-3':'#27231e','--surface-4':'#322d26'}).forEach(([key,val])=>set(key,val));
+            }
+            else if(preset.scheme==='pantone') { const base=preset.base; Object.entries({'--bg':mix(base,'#ffffff',.68),'--panel':mix(base,'#ffffff',.88),'--border':mix(base,'#4c463b',.28),'--text':'#28251f','--muted':'#6d6659','--surface-0':mix(base,'#ffffff',.77),'--surface-1':mix(base,'#ffffff',.84),'--surface-2':mix(base,'#ffffff',.64),'--surface-3':mix(base,'#ffffff',.48),'--surface-4':mix(base,'#ffffff',.32)}).forEach(([key,val])=>set(key,val)); }
             if(preset.scheme==='custom') { const isLight=customIsLight(), toward=isLight?'#000000':'#ffffff', text=isLight?'#151515':'#f1f1f1'; Object.entries({'--bg':customPalette.background,'--panel':customPalette.panel,'--border':mix(customPalette.panel,toward,isLight?.16:.14),'--text':text,'--muted':mix(text,customPalette.background,.43),'--surface-0':mix(customPalette.background,customPalette.panel,.38),'--surface-1':customPalette.panel,'--surface-2':mix(customPalette.panel,toward,.04),'--surface-3':mix(customPalette.panel,toward,.09),'--surface-4':mix(customPalette.panel,toward,.15)}).forEach(([key,val])=>set(key,val)); }
             if(document.documentElement.dataset.theme==='aero') Object.entries({'--bg':'#bcecff','--panel':'#f7feff','--border':'#70bdd2','--text':'#143747','--muted':'#537783','--surface-0':'#dff8ff','--surface-1':'#f4fdff','--surface-2':'#cceff7','--surface-3':'#afe4ef','--surface-4':'#8bd7e6'}).forEach(([key,val])=>set(key,val));
-            document.documentElement.dataset.colorScheme=preset.scheme||'tinted';
+            document.documentElement.dataset.colorScheme=heritage ? 'heritage' : preset.scheme||'tinted';
             if(skinNow){
                 Object.entries(SKINS[skinNow].vars).forEach(([key,val])=>set(key,val));
                 document.documentElement.dataset.colorScheme='skin';
