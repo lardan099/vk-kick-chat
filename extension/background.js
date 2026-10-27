@@ -549,7 +549,7 @@ async function giftApi(msg) {
     }
 }
 async function openGifts(q, history) {
-    const url = chrome.runtime.getURL('gifts.html') + (history ? '?history=1' : q ? '?q=' + encodeURIComponent(q) : '');
+    const url = chrome.runtime.getURL('gifts.html') + (history ? '?history=1' + (q ? '&hq=' + encodeURIComponent(q) : '') : q ? '?q=' + encodeURIComponent(q) : '');
     const [tab] = await chrome.tabs.query({ url: chrome.runtime.getURL('gifts.html') + '*' });
     if (tab) {
         if (history) await chrome.tabs.update(tab.id, { url });

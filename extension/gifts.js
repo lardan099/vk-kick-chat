@@ -301,5 +301,9 @@
   const params = new URLSearchParams(location.search);
   if (params.get('q')) $('target').value = params.get('q');
   // из чата «История выдач» — сразу на вкладку истории
-  if (params.has('history')) accessReady.then(() => { if (!$('workspace').hidden) showView(true); });
+  if (params.has('history')) accessReady.then(() => {
+    if ($('workspace').hidden) return;
+    showView(true);
+    if (params.get('hq')) { $('history-query').value = params.get('hq'); loadHistory(); }
+  });
 })();

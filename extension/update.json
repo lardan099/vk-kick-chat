@@ -1,15 +1,15 @@
 {
-  "version": "6.56",
-  "notes": "Выдача подписок — быстрая панель прямо в чате",
+  "version": "6.57",
+  "notes": "Подписки: вставка из буфера сама при открытии, видно прошлые выдачи",
   "files": [
     {
       "path": "background.js",
-      "sha256": "ec84bcee5266e37aa3cb3115d7b0122595495270503cb43a0e2e3f2bc29abb0c",
-      "size": 36976
+      "sha256": "a646acdb2be5e00b5661a844b8b87aeb352c8ce271ed1d057a883ef71f9f964f",
+      "size": 37020
     },
     {
       "path": "chat.js",
-      "sha256": "fd6d78b3c4a6b95776735d2cb69c7d3ca3fc7b8525be8d35485868e23f6e262b",
+      "sha256": "9ad1c08e66361633a60d86709dd00e0f45958f00d8f711f96be6e77bc08432ce",
       "size": 319453
     },
     {
@@ -19,8 +19,8 @@
     },
     {
       "path": "ext-ui.js",
-      "sha256": "9b5adaa608ea6631c7a80d8c56f1f3fdf68fd7709adf7ab98879c27897adeb7f",
-      "size": 35715
+      "sha256": "663a4789499ccc2a05e0ac9adf631b23adc58bb6e020f26aabac5d7a5d0156ae",
+      "size": 41862
     },
     {
       "path": "gifts.css",
@@ -34,8 +34,8 @@
     },
     {
       "path": "gifts.js",
-      "sha256": "852a39e49ca84391800740045aea87fd638e58c824bafa22278cbb3b04f5672f",
-      "size": 21261
+      "sha256": "865a194eea888bc2f98199f443f4b4b8a3c349c75fe4508c729d08d9020923d8",
+      "size": 21368
     },
     {
       "path": "gm-shim.js",
@@ -64,8 +64,8 @@
     },
     {
       "path": "manifest.json",
-      "sha256": "b08aa6c9a235adbae6634c9d124ef0de2db45d0f0d81a642cafd245c387d32e3",
-      "size": 2205
+      "sha256": "6ff4ffaef9e675b68e18b1d40e25b23e54a2a6915dea4df3b92cb6f85a904a7b",
+      "size": 2226
     },
     {
       "path": "offscreen.html",

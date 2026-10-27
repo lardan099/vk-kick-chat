@@ -40,7 +40,22 @@
                 display:none;flex-direction:column;gap:7px;padding:8px;border:1px solid var(--border,#444);border-radius:10px;
                 background:var(--panel,#181a1b);color:var(--text,#eee);font-size:12px;box-shadow:0 10px 28px rgba(0,0,0,.22)}
             #mcx-gifts.open{display:flex;animation:mcx-open .12s ease-out}
-            .gq-row{margin:0}
+            .gq-row{margin:0;display:flex;gap:5px}
+            .gq-paste{flex:0 0 auto;height:32px;padding:0 10px;border:1px solid var(--border,#444);border-radius:8px;background:var(--surface-2,#242628);
+                color:var(--text,#eee);font:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:background-color .1s,transform .08s}
+            .gq-paste:hover{background:var(--surface-3,#2e3133)}
+            .gq-paste:active{transform:scale(.96)}
+            .gq-past{display:grid;gap:3px;padding:6px 9px;border:1px solid var(--border,#444);border-radius:8px;background:var(--surface-0,#111);animation:mcx-open .12s ease-out}
+            .gq-past[data-has=true]{border-color:rgba(212,154,30,.6)}
+            .gq-past-head{font-size:11px;font-weight:700;color:var(--muted,#999)}
+            .gq-past[data-has=true] .gq-past-head{color:#d49a1e}
+            .gq-past ol{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+            .gq-past ol:empty{display:none}
+            .gq-past li{display:grid;grid-template-columns:48px 56px minmax(0,1fr) auto;gap:6px;align-items:baseline;font-size:11.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+            .gq-past li b{color:var(--accent,#7a6337)}
+            .gq-actor{color:var(--muted,#999);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+            .gq-until{color:var(--muted,#999);white-space:nowrap}
+            .gq-past li.gq-more{display:block;color:var(--muted,#999);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
             .gq-target{width:100%;height:32px;padding:0 10px;border:1px solid var(--border,#444);border-radius:8px;background:var(--surface-0,#111);
                 color:var(--text,#eee);font:inherit;font-size:13px;outline:none;box-sizing:border-box}
             .gq-target:focus{border-color:var(--accent,#7a6337);box-shadow:0 0 0 2px var(--accent-soft,rgba(0,0,0,.1))}
@@ -154,8 +169,10 @@
             gp.innerHTML = `
                 <form class="gq-row" data-f="lookup">
                     <input class="gq-target" placeholder="@username или Telegram ID" autocomplete="off" maxlength="40" spellcheck="false">
+                    <button type="button" class="gq-paste" title="Вставить из буфера и найти">Вставить</button>
                 </form>
                 <div class="gq-who" hidden><b></b><small></small><span class="gq-pill"></span></div>
+                <div class="gq-past" hidden><div class="gq-past-head"></div><ol></ol></div>
                 <div class="gq-months" role="group" aria-label="Срок">
                     <button type="button" data-m="1" aria-pressed="true">1</button><button type="button" data-m="3">3</button>
                     <button type="button" data-m="6">6</button><button type="button" data-m="12">12</button>
@@ -167,6 +184,7 @@
             document.body.appendChild(gp);
             const $g = s => gp.querySelector(s);
             const input = $g('.gq-target'), who = $g('.gq-who'), give = $g('.gq-give'), note = $g('.gq-note'), custom = $g('.gq-custom');
+            const past = $g('.gq-past'), pastHead = $g('.gq-past-head'), pastList = $g('.gq-past ol');
             let months = 1, recipient = null, busy = false, operation = null, timer = null, version = 0, lastQuery = '';
             const shortDate = v => new Date(v).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }).replace(/ г\.$/, '');
             const normalize = v => {
@@ -193,15 +211,56 @@
                 give.textContent = busy ? 'Выдаю…' : operation ? 'Проверить результат' : `Выдать на ${ok ? months : '…'} мес. · ${ok ? months * 400 : '—'} ₽`;
                 if (operation && !busy) give.disabled = false;
                 who.hidden = !recipient;
+                renderPast();
                 if (!recipient) return;
                 const subs = recipient.subscriptions || [];
                 const infinite = subs.some(s => s.infinite);
                 const ends = subs.map(s => Date.parse(s.expiredAt)).filter(Number.isFinite);
                 who.querySelector('b').textContent = recipient.username ? '@' + recipient.username : recipient.name || 'Пользователь Telegram';
-                who.querySelector('small').textContent = 'ID ' + recipient.telegramId + (recipient.issued ? ` · выдавали ${recipient.issued}` : '');
+                who.querySelector('small').textContent = 'ID ' + recipient.telegramId;
                 const pill = who.querySelector('.gq-pill');
                 pill.textContent = recipient.banned ? 'заблокирован' : infinite ? 'бессрочно' : ends.length ? 'до ' + shortDate(Math.max(...ends)) : 'без подписки';
                 pill.dataset.tone = recipient.banned ? 'bad' : ends.length || infinite ? 'ok' : '';
+            }
+            // прошлые выдачи этому человеку: сколько, когда, кто и до какого числа
+            const times = n => n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'раза' : 'раз';
+            function renderPast() {
+                past.hidden = !recipient;
+                if (!recipient) return;
+                const items = recipient.past || [];
+                const n = recipient.issued || 0;
+                pastHead.textContent = n ? `Уже выдавали ${n} ${times(n)}` : 'Раньше не выдавали';
+                past.dataset.has = String(n > 0);
+                const shown = items.slice(0, 4);
+                pastList.replaceChildren(...shown.map(it => {
+                    const li = document.createElement('li');
+                    const when = it.completedAt || it.createdAt;
+                    const m = document.createElement('b'); m.textContent = '+' + it.months + ' мес.';
+                    const d = document.createElement('span');
+                    d.textContent = new Date(when).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit' });
+                    d.title = new Date(when).toLocaleString('ru-RU');
+                    const a = document.createElement('span'); a.className = 'gq-actor'; a.textContent = it.actor === me.username ? 'ты' : it.actor;
+                    const u = document.createElement('span'); u.className = 'gq-until';
+                    u.textContent = it.infinite ? 'бессрочно' : it.expiresAt ? 'до ' + new Date(it.expiresAt).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '';
+                    li.append(m, d, a, u);
+                    return li;
+                }));
+                if (n > shown.length) {
+                    const li = document.createElement('li'); li.className = 'gq-more';
+                    li.textContent = `ещё ${n - shown.length} — в истории`;
+                    li.addEventListener('click', () => { open(false); MC_EXT.send('gift:open', { history: true, q: recipient.telegramId }).catch(() => { }); });
+                    pastList.append(li);
+                }
+            }
+            async function refreshPast(id) {
+                try {
+                    const h = await api('history?' + new URLSearchParams({ q: id, status: 'issued' }));
+                    if (recipient && recipient.telegramId === id) {
+                        recipient.past = h.items || [];
+                        if (h.counts) recipient.issued = h.counts.issued;
+                        render();
+                    }
+                } catch (e) { }
             }
             async function lookup() {
                 clearTimeout(timer);
@@ -213,7 +272,8 @@
                 try {
                     const data = await api('lookup?q=' + encodeURIComponent(q));
                     if (v !== version) return;
-                    recipient = { ...data.recipient, issued: data.history && data.history.counts ? data.history.counts.issued : 0 };
+                    recipient = { ...data.recipient, issued: data.history && data.history.counts ? data.history.counts.issued : 0,
+                        past: (data.history && data.history.items || []).filter(it => it.status === 'issued') };
                     say(recipient.banned ? 'Заблокирован в боте — выдать нельзя' : '');
                 } catch (e) {
                     if (v !== version) return;
@@ -234,8 +294,8 @@
                         csrf = (await api('me')).csrf;
                         result = await api('grant', { method: 'POST', body: JSON.stringify(operation), csrf });
                     }
-                    const issued = (recipient && recipient.issued || 0) + 1;
-                    recipient = { ...result.recipient, issued };
+                    recipient = { ...result.recipient, issued: (recipient && recipient.issued || 0) + 1, past: recipient && recipient.past || [] };
+                    refreshPast(result.recipient.telegramId);
                     const ends = result.recipient.subscriptions.map(s => Date.parse(s.expiredAt)).filter(Number.isFinite);
                     const name = result.recipient.username ? '@' + result.recipient.username : result.recipient.name || 'Получатель';
                     say(`Готово: ${name} +${result.months} мес.${ends.length ? ' Доступ до ' + shortDate(Math.max(...ends)) + '.' : ''}`, 'ok');
@@ -246,10 +306,23 @@
                     if (e.code && !['PAY_UNKNOWN', 'SUBSCRIPTION_PENDING', 'INVOICE_STATE', 'GRANT_BUSY', 'VISIBILITY_RESTORE', 'NETWORK'].includes(e.code)) operation = null;
                 } finally { busy = false; render(); }
             }
+            // быстрая вставка: при открытии панели @ник/ID берётся из буфера сам (если там он), и сразу поиск
+            async function pasteFromClipboard(force) {
+                let text = '';
+                try { text = await navigator.clipboard.readText(); }
+                catch (e) { if (force) say('Браузер не дал прочитать буфер — вставь Ctrl+V'); return false; }
+                const q = normalize(text);
+                if (!valid(q)) { if (force) say(text.trim() ? 'В буфере не @username и не Telegram ID' : 'В буфере пусто'); return false; }
+                if (q === normalize(input.value) && recipient) return true;
+                input.value = q;
+                lastQuery = '';
+                lookup();
+                return true;
+            }
             const open = on => {
                 gp.classList.toggle('open', on);
                 gift.classList.toggle('open', on);
-                if (on) { openPanel(false); input.focus(); input.select(); }
+                if (on) { openPanel(false); input.focus(); input.select(); if (!busy && !operation) pasteFromClipboard(false); }
             };
             gift.addEventListener('click', e => { e.stopPropagation(); open(!gp.classList.contains('open')); });
             btn.addEventListener('click', () => open(false));
@@ -262,7 +335,16 @@
                 if (q !== lastQuery) { recipient = null; version++; say(''); render(); }
                 if (valid(q)) timer = setTimeout(lookup, 300);
             });
-            input.addEventListener('paste', () => setTimeout(lookup, 0));
+            input.addEventListener('paste', e => {
+                // вставка заменяет поле целиком и ищет сразу, без ожидания
+                const text = e.clipboardData && e.clipboardData.getData('text');
+                if (!text) { setTimeout(lookup, 0); return; }
+                e.preventDefault();
+                input.value = normalize(text);
+                lastQuery = '';
+                lookup();
+            });
+            $g('.gq-paste').addEventListener('click', () => pasteFromClipboard(true));
             gp.querySelectorAll('[data-m]').forEach(b => b.addEventListener('click', () => { months = Number(b.dataset.m); custom.value = ''; operation = null; render(); }));
             custom.addEventListener('input', () => { months = custom.value ? Number(custom.value) : 1; operation = null; render(); });
             give.addEventListener('click', grant);
