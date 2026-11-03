@@ -1,15 +1,15 @@
 {
-  "version": "6.64",
-  "notes": "VK: сутки и другие сроки снова доступны (по умолчанию сутки)",
+  "version": "6.65",
+  "notes": "Выдача подписок работает, даже когда зеркало m.pzdcflix лежит: расширение само выбирает отвечающий сайт",
   "files": [
     {
       "path": "background.js",
-      "sha256": "a646acdb2be5e00b5661a844b8b87aeb352c8ce271ed1d057a883ef71f9f964f",
-      "size": 37020
+      "sha256": "7ba9caaedbeb0f0ca3765f043ff474d915815daacf837f1fdc4f420ea390251d",
+      "size": 38099
     },
     {
       "path": "chat.js",
-      "sha256": "58603ae924b65c9ca268925484a405f1b1dc5242d95a9795a1a1ed7cc560aed6",
+      "sha256": "2f0e6bffbb824d6ca6503b6e544ab3e2a237140e18ed371124db1f6136492683",
       "size": 339314
     },
     {
@@ -64,7 +64,7 @@
     },
     {
       "path": "manifest.json",
-      "sha256": "ec77a33773521b7216647480ef47c6563c97e9915f9999420784d7852c22d230",
+      "sha256": "509c234629c4d9cc418c5206bb2db71c2fd20e6f126231362832523f5d88fbc5",
       "size": 2226
     },
     {

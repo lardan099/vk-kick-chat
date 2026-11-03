@@ -518,12 +518,25 @@ async function installHeaderRules() {
 // не читаем и никуда не передаём: fetch с credentials отправляет её сам. Пути — только
 // из белого списка, тело — только JSON выдачи. Права «команды» проверяет сервер.
 const GIFT_PATH = /^(me|grant|lookup\?[\w%.=&@-]{1,200}|history\?[\w%.=&@-]{0,300})$/;
+// Кука выдана на весь домен (pzdcflix.ru), её видят и зеркало m.*, и сам сайт. Зеркало
+// живёт на эдже и может лежать отдельно (Beget, 02.11.2026), поэтому берём первый сайт
+// с входом, который отвечает, и помним его 10 минут.
+let giftSiteCache = { site: '', at: 0 };
 async function giftSite() {
+    if (giftSiteCache.site && Date.now() - giftSiteCache.at < 10 * 60 * 1000) return giftSiteCache.site;
+    const signedIn = [];
     for (const site of CONFIG.giftSites) {
         const c = await chrome.cookies.get({ url: site + '/', name: 'pzdc_session' }).catch(() => null);
-        if (c) return site;
+        if (c) signedIn.push(site);
     }
-    return CONFIG.giftSites[0];
+    for (const site of signedIn) {
+        try {
+            await fetch(`${site}/api/rec/admin/me`, { credentials: 'include', cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(6000) });
+            giftSiteCache = { site, at: Date.now() };
+            return site;
+        } catch (e) { }
+    }
+    return signedIn[0] || CONFIG.giftSites[0];
 }
 async function giftApi(msg) {
     const path = String(msg.path || '');
@@ -545,6 +558,8 @@ async function giftApi(msg) {
         try { data = await r.json(); } catch (e) { }
         return { status: r.status, data, site };
     } catch (e) {
+        // Сам запрос не повторяем (выдача могла пройти), но следующий выберет сайт заново.
+        giftSiteCache = { site: '', at: 0 };
         return { error: e && e.name === 'TimeoutError' ? 'Сайт долго не отвечает. Нажми «Проверить результат»: второй оплаты не будет.' : 'Сайт не ответил. Проверь интернет.' };
     }
 }
