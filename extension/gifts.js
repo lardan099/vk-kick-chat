@@ -253,6 +253,7 @@
       const infinite = result.recipient.subscriptions.some((s) => s.infinite);
       notice(`Готово: ${who} +${result.months} мес. ${infinite ? 'Доступ бессрочный.' : ends.length ? `Доступ до ${shortDate(Math.max(...ends)).replace(/\.$/, "")}.` : ''}`, 'success');
       operation = null;
+      $('months').value = 1; // после выдачи срок снова месяц
     } catch (error) {
       notice(error.message);
       // Only known invoice/payment outcomes need resuming, never a failed create.

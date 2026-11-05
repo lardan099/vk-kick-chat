@@ -1,6 +1,6 @@
 {
   "version": "6.65",
-  "notes": "Выдача подписок работает, даже когда зеркало m.pzdcflix лежит: расширение само выбирает отвечающий сайт",
+  "notes": "Подписки: после выдачи срок сбрасывается на месяц",
   "files": [
     {
       "path": "background.js",
@@ -19,8 +19,8 @@
     },
     {
       "path": "ext-ui.js",
-      "sha256": "663a4789499ccc2a05e0ac9adf631b23adc58bb6e020f26aabac5d7a5d0156ae",
-      "size": 41862
+      "sha256": "81d1453f1ae841bdbb614b73663dda9f5f5f2da319aecceb775422a7ae4e9507",
+      "size": 42055
     },
     {
       "path": "gifts.css",
@@ -34,8 +34,8 @@
     },
     {
       "path": "gifts.js",
-      "sha256": "865a194eea888bc2f98199f443f4b4b8a3c349c75fe4508c729d08d9020923d8",
-      "size": 21368
+      "sha256": "f4f6fc264bc86fe96cdea7d546dafe63708d6d947412621165fbde441a24e093",
+      "size": 21455
     },
     {
       "path": "gm-shim.js",

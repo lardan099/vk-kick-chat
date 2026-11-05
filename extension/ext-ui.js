@@ -300,6 +300,7 @@
                     const name = result.recipient.username ? '@' + result.recipient.username : result.recipient.name || 'Получатель';
                     say(`Готово: ${name} +${result.months} мес.${ends.length ? ' Доступ до ' + shortDate(Math.max(...ends)) + '.' : ''}`, 'ok');
                     operation = null;
+                    months = 1; custom.value = ''; // после выдачи срок снова месяц — чтобы следующему не выдать случайно больше
                 } catch (e) {
                     say(e.message);
                     // продолжать стоит только счёт, который уже создан/оплачивается — его и проверит повтор
