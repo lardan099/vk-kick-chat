@@ -77,7 +77,34 @@ const busy = async (btn, text, fn) => {
 
 $('open').addEventListener('click', async () => { await send('feed:open'); window.close(); });
 $('gifts').addEventListener('click', async () => { await send('gift:open'); window.close(); });
-send('gift:api', { path: 'me' }).then(r => { $('gifts').hidden = !(r && r.status === 200 && r.data && r.data.allowed === true); }).catch(() => { });
+async function refreshDonationStatus() {
+    const s = await send('donation:status');
+    $('donation-status').textContent = s.error || (s.configured
+        ? [s.socketStatus, s.problem, 'В очереди: ' + s.count].filter(Boolean).join(' ')
+        : 'Нужна ссылка виджета с доступом к сумме доната.');
+}
+send('gift:api', { path: 'me' }).then(async r => {
+    if (r?.data?.allowed !== true) return;
+    $('gifts').hidden = false;
+    $('donation-settings').hidden = false;
+    await refreshDonationStatus();
+    setInterval(() => { if ($('donation-settings').closest('details').open) refreshDonationStatus().catch(() => {}); }, 1500);
+}).catch(() => {});
+$('donation-settings').addEventListener('submit', async e => {
+    e.preventDefault();
+    const button = e.target.querySelector('button'), input = $('donation-widget');
+    button.disabled = true;
+    const feedback = $('donation-feedback');
+    feedback.hidden = false; feedback.textContent = 'Проверяю виджет…';
+    try {
+        const r = await send('donation:configure', { input: input.value });
+        if (!r?.configured) throw new Error(r?.error || 'Не удалось подключить виджет.');
+        input.value = '';
+        feedback.hidden = true;
+        await refreshDonationStatus();
+    } catch (error) { feedback.hidden = false; feedback.textContent = error.message; }
+    finally { button.disabled = false; }
+});
 $('restart').addEventListener('click', () => busy($('restart'), 'Перезапускаю…', () => send('helpers:restart')));
 $('check').addEventListener('click', () => busy($('check'), 'Проверяю…', () => send('update:check')));
 $('upd-go').addEventListener('click', async () => { await send('update:open', { auto: true }); window.close(); });

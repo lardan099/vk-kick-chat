@@ -152,6 +152,7 @@
         MC_EXT.send('gift:api', { path: 'me' }).then(r => {
             if (!r || r.status !== 200 || !r.data || r.data.allowed !== true) return;
             setupGifts(r.data);
+            setupDonationPanel();
         }).catch(() => { });
         function setupGifts(me) {
             let csrf = me.csrf;

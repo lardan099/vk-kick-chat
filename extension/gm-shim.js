@@ -42,6 +42,16 @@
     const copy = v => (v === null || typeof v !== 'object') ? v : structuredClone(v);
     const dead = e => /context invalidated/i.test(String(e && e.message || e));
 
+    async function callExtension(call) {
+        try {
+            if (alive && chrome.runtime?.id) return await call();
+        } catch (error) {
+            if (!dead(error)) throw error;
+        }
+        alive = false;
+        throw new Error('Расширение обновилось — перезагрузи вкладку');
+    }
+
     const ready = chrome.storage.local.get(null).then(all => {
         Object.assign(cache, all);
         importFromUserscript();
@@ -110,7 +120,7 @@
         while (p.length && now - p[0].t > 10000) p.shift();
         p.push({ json, t: now });
         if (!alive) return;
-        chrome.storage.local.set({ [key]: cache[key] }).catch(e => { if (dead(e)) alive = false; });
+        callExtension(() => chrome.storage.local.set({ [key]: cache[key] })).catch(() => {});
     }
     function GM_deleteValue(key) {
         if (!(key in cache)) return;
@@ -118,7 +128,7 @@
         cacheJson[key] = undefined;
         const p = pending[key] || (pending[key] = []);
         p.push({ json: undefined, t: Date.now() });
-        if (alive) chrome.storage.local.remove(key).catch(e => { if (dead(e)) alive = false; });
+        if (alive) callExtension(() => chrome.storage.local.remove(key)).catch(() => {});
     }
     function GM_addValueChangeListener(key, fn) {
         const id = ++listenerSeq;
@@ -131,11 +141,7 @@
     }
 
     function send(type, data = {}) {
-        if (!alive) return Promise.reject(new Error('Расширение обновилось — перезагрузи вкладку'));
-        return chrome.runtime.sendMessage({ type, ...data }).catch(e => {
-            if (dead(e)) alive = false;
-            throw e;
-        });
+        return callExtension(() => chrome.runtime.sendMessage({ type, ...data }));
     }
 
     function GM_xmlhttpRequest(d) {
@@ -215,6 +221,9 @@
         document.addEventListener('error', e => {
             const t = e.target;
             if (!t || t.tagName !== 'SCRIPT' || !t.src || Date.now() - bootAt > 120000) return;
+            // Datadog RUM собирает метрики сайта. Чтение чата от него не зависит.
+            // Stripe обслуживает платежи и тоже не участвует в сборе сообщений.
+            if (/^https?:\/\/(?:www\.datadoghq-browser-agent\.com|js\.stripe\.com)\//i.test(t.src)) return;
             clearTimeout(failTimer);
             failTimer = setTimeout(() => reportError('не загрузился скрипт ' + String(t.src).slice(0, 80)), 3000);
         }, true);

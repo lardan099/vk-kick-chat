@@ -1,16 +1,16 @@
 {
-  "version": "6.66",
-  "notes": "Подписки: после выдачи срок сбрасывается на месяц",
+  "version": "6.73",
+  "notes": "Подписки за донаты DonatePay: подтверждение прямо в чате по @нику или Telegram ID. Встроенный каталог смайлов Kick и VK, исправления 7TV и перезагрузки чата. Убраны лишние мечи у модераторов.",
   "files": [
     {
       "path": "background.js",
-      "sha256": "7ba9caaedbeb0f0ca3765f043ff474d915815daacf837f1fdc4f420ea390251d",
-      "size": 38099
+      "sha256": "428bf2f3b0ea943ebe7f622711b8cd652217614db0230e0ef85cd7c94b91b428",
+      "size": 39313
     },
     {
       "path": "chat.js",
-      "sha256": "419a75644592cd0676990813639eb6a40a4f7e8aebe820cfdc231e5db1c7f3ba",
-      "size": 339314
+      "sha256": "5e8c73f1e05486233101d8116a04306918f372bb050415e94d3063b4dd993c46",
+      "size": 341245
     },
     {
       "path": "config.js",
@@ -18,9 +18,24 @@
       "size": 5033
     },
     {
+      "path": "donatepay.js",
+      "sha256": "6f6c8ebef17fbdcf9d5a3338294714e0b52a77e0a4ccfa9fa21dafb98c8c6085",
+      "size": 16060
+    },
+    {
+      "path": "donation-panel.js",
+      "sha256": "6277a6b2eb081c26c1add8092c5b5abfe0f4a0427d489857ce5734465f458a86",
+      "size": 8474
+    },
+    {
+      "path": "emote-catalog.json",
+      "sha256": "c22fb9a26b4dd96ac69bced4f6dd0eb9fe560edf9a58b743680004964861b0fa",
+      "size": 22267
+    },
+    {
       "path": "ext-ui.js",
-      "sha256": "81d1453f1ae841bdbb614b73663dda9f5f5f2da319aecceb775422a7ae4e9507",
-      "size": 42055
+      "sha256": "818933b8af10035eb8f31c4d4f734eb265328ee2853532727c4a9f0bf850e13b",
+      "size": 42089
     },
     {
       "path": "gifts.css",
@@ -39,8 +54,8 @@
     },
     {
       "path": "gm-shim.js",
-      "sha256": "a019d90489c10ebd5d1608e6f08dda044ec83c71d032bee9dcf925753d733760",
-      "size": 18842
+      "sha256": "73295188356d08efe584f85cf5424840ffc5455a858597fd72b5ceaa9bfdf34e",
+      "size": 19331
     },
     {
       "path": "icons/128.png",
@@ -64,8 +79,8 @@
     },
     {
       "path": "manifest.json",
-      "sha256": "e85d2bb744095125adde450e849fd7cceac2b888002727222056ee4618aa083e",
-      "size": 2226
+      "sha256": "f41a942bb41810a4399c89e825fab9fd7786b64a6d43e70c3801b452b63da377",
+      "size": 2333
     },
     {
       "path": "offscreen.html",
@@ -84,13 +99,13 @@
     },
     {
       "path": "popup.html",
-      "sha256": "ec53c8e6ea50550da4abe7bfa079d61111f02e59d204e505c98dfd8415ee4cd0",
-      "size": 3502
+      "sha256": "9b028654444ecd38206d15944de082dfdb4537fa59ced4d36791d67b78ae715e",
+      "size": 4020
     },
     {
       "path": "popup.js",
-      "sha256": "706cca149c46925bba540406b10f70d129a2954178f7f4c1ec08610124348700",
-      "size": 7345
+      "sha256": "90c14bffb5f2a40164e2035db899b579b940ab40ab6a73f567e9522ea7f2ac16",
+      "size": 8657
     },
     {
       "path": "theme.js",
@@ -109,8 +124,8 @@
     },
     {
       "path": "ui.css",
-      "sha256": "290f071f28010526086694727f85a5bb3ba48e14658a323b2a04794d29cfc179",
-      "size": 7334
+      "sha256": "699ed867d2d9d85abc4da8a3255ab5f01356aa967dac2b0b2236b6c4f1c92f88",
+      "size": 7509
     },
     {
       "path": "updater.html",

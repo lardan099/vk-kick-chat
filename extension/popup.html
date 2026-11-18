@@ -29,6 +29,13 @@
 
   <details>
     <summary>Настройки</summary>
+    <form class="group" id="donation-settings" hidden>
+      <label for="donation-widget"><strong>Донаты DonatePay</strong></label>
+      <input type="password" id="donation-widget" placeholder="Ссылка «Последние события»" autocomplete="off" required>
+      <div class="note" id="donation-status" role="status"></div>
+      <div class="note" id="donation-feedback" role="status" hidden></div>
+      <button class="btn" type="submit">Подключить виджет</button>
+    </form>
     <div class="group">
       <div class="group-title"><strong>Где держать</strong></div>
       <div class="choices">

@@ -7,6 +7,7 @@
 //   window — отдельное свёрнутое окно
 //   tabs   — закреплённые вкладки без фокуса
 import { CONFIG, isFeedUrl, compareVersions, loadSettings, updateUrlOf } from './config.js';
+import { configureDonations, donationStatus, pollDonations, resolveDonation } from './donatepay.js';
 
 const HELPER_NAMES = Object.keys(CONFIG.helpers);
 const STALE_MS = 110000;          // сборщики пишут heartbeat раз в 30 с
@@ -522,6 +523,7 @@ const GIFT_PATH = /^(me|grant|lookup\?[\w%.=&@-]{1,200}|history\?[\w%.=&@-]{0,30
 // живёт на эдже и может лежать отдельно (Beget, 02.11.2026), поэтому берём первый сайт
 // с входом, который отвечает, и помним его 10 минут.
 let giftSiteCache = { site: '', at: 0 };
+let donationAccessUntil = 0;
 async function giftSite() {
     if (giftSiteCache.site && Date.now() - giftSiteCache.at < 10 * 60 * 1000) return giftSiteCache.site;
     const signedIn = [];
@@ -659,6 +661,7 @@ chrome.runtime.onStartup.addListener(() => {
 });
 
 chrome.alarms.onAlarm.addListener(alarm => {
+    if (alarm.name === 'mc-watchdog') pollDonations().catch(() => {});
     if (alarm.name === 'mc-watchdog') serial(watchdog);
     if (alarm.name === 'mc-update') checkUpdate();
 });
@@ -692,8 +695,11 @@ chrome.storage.onChanged.addListener((changes, area) => {
 
 chrome.runtime.onMessage.addListener((msg, sender, reply) => {
     if (!msg || msg.target === 'offscreen') return false;
+    const popup = sender.url === chrome.runtime.getURL('popup.html');
+    const feed = sender.frameId === 0 && isFeedUrl(sender.url);
     const handlers = {
         'mc:xhr': () => doXhr(msg.req),
+        'emotes:bundled': () => fetch(chrome.runtime.getURL('emote-catalog.json')).then(response => response.json()),
         'vk:wsinfo': () => vkWsInfo(!!msg.fresh).catch(async e => {
             await chrome.storage.session.remove('ext_vk_ws');
             return { error: String(e && e.message || e) };
@@ -709,6 +715,21 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
         'feed:open': () => openFeed(),
         'transfer:open': () => openTransfer(),
         'gift:api': () => giftApi(msg),
+        'donation:configure': () => popup && configureDonations(msg.input),
+        'donation:status': () => popup && donationStatus(),
+        'donation:next': async () => {
+            if (!feed) return;
+            await pollDonations();
+            const result = await donationStatus(true);
+            if (result.card && Date.now() >= donationAccessUntil) {
+                const access = await giftApi({ path: 'me' });
+                if (access.data?.allowed !== true) return { card: null, count: 0 };
+                donationAccessUntil = Date.now() + 30000;
+            }
+            return result;
+        },
+        'donation:skip': () => feed && resolveDonation(msg, giftApi),
+        'donation:grant': () => feed && resolveDonation(msg, giftApi),
         'gift:open': () => openGifts(msg.q, !!msg.history),
         'gift:login': () => giftSite().then(site => chrome.tabs.create({ url: site + '/zapisi/manage', active: true })),
         'update:check': () => checkUpdate(),

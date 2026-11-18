@@ -6,7 +6,7 @@ if (MC_EXT.skip) return;
 // ==UserScript==
 // @name         Merged Chat (Kick + VK Play Live)
 // @namespace    grpzdc.mergedchat
-// @version      6.66
+// @version      6.73
 // @description  Перехватывает WebSocket реальных чатов Kick и VK Play Live, собирает все сообщения и рисует единую ленту своим дизайном. Сохраняет весь функционал родных чатов (авторизация, бан и т.д.).
 // @match        https://kick.com/popout/*/chat*
 // @match        https://dashboard.kick.com/*
@@ -43,6 +43,7 @@ if (MC_EXT.skip) return;
     // ---- КОНФИГ КАНАЛА (для модерки Kick) ----
     const KICK_SLUG = 'grpzdc';
     const KICK_CHANNEL_ID = 713405;
+    const KICK_OWNER_ID = 735907; // user_id из /api/v2/channels/grpzdc
     const KICK_CHATROOM_ID = 713152;
     const VK_DOM_FALLBACK = false;
     const VK_ICON_URL = 'https://images.live.vkvideo.ru/smile/42502cfe-8cf9-4f13-aaa3-4f100359b6d1/icon/size/medium?change_time=1764532236';
@@ -238,7 +239,7 @@ if (MC_EXT.skip) return;
         const text = cleanChatText(value);
         return text.trim() ? text : '';
     }
-    function sevenTvRequest(url) {
+    function requestEmoteJson(url) {
         return new Promise((resolve, reject) => {
             GM_xmlhttpRequest({
                 method: 'GET',
@@ -247,19 +248,21 @@ if (MC_EXT.skip) return;
                 timeout: 10000,
                 onload: response => {
                     if (response.status < 200 || response.status >= 300) {
-                        reject(new Error(`7TV HTTP ${response.status}`));
+                        reject(Object.assign(new Error(`HTTP ${response.status}`), { status: response.status }));
                         return;
                     }
                     try {
-                        resolve(typeof response.response === 'string'
+                        const data = typeof response.response === 'string'
                             ? JSON.parse(response.response)
-                            : response.response);
+                            : response.response;
+                        if (!data || typeof data !== 'object') throw new Error('ответ не содержит JSON');
+                        resolve(data);
                     } catch (error) {
                         reject(error);
                     }
                 },
-                onerror: reject,
-                ontimeout: () => reject(new Error('7TV request timed out'))
+                onerror: error => reject(new Error(error?.statusText || error?.message || 'ошибка сети')),
+                ontimeout: () => reject(new Error('тайм-аут 10 с'))
             });
         });
     }
@@ -1759,7 +1762,7 @@ if (MC_EXT.skip) return;
         let mentionItems = [];
         let mentionActive = -1;
         let mentionAnchor = null;
-        const KICK_BADGE_EMOJI = { broadcaster:'🎬', moderator:'⚔️', vip:'💎', og:'🏅', founder:'👑', subscriber:'⭐', sub_gifter:'🎁' };
+        const KICK_BADGE_EMOJI = { broadcaster:'🎬', vip:'💎', og:'🏅', founder:'👑', subscriber:'⭐', sub_gifter:'🎁' };
         // Оригинальные SVG значков Kick (вытащены из бандла kick.com), зашиты как data-URI
         const KICK_BADGE_SVG = {
             broadcaster: '<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15.6773 22.1533C17.3698 22.1533 18.8182 21.5507 20.0233 20.3461C21.2282 19.1415 21.8307 17.6924 21.8307 16V6.15401C21.8307 4.46162 21.2286 3.01305 20.0233 1.80784C18.8182 0.602907 17.3698 0 15.6773 0C13.9849 0 12.5363 0.602907 11.3311 1.80784C10.1259 3.01285 9.52344 4.46162 9.52344 6.15401V16C9.52344 17.6923 10.1262 19.1415 11.3311 20.3461C12.5361 21.5507 13.9849 22.1533 15.6773 22.1533Z" fill="url(#paint0_linear_209_29909)"/><path d="M15.6773 22.1533C17.3698 22.1533 18.8182 21.5507 20.0233 20.3461C21.2282 19.1415 21.8307 17.6924 21.8307 16V6.15401C21.8307 4.46162 21.2286 3.01305 20.0233 1.80784C18.8182 0.602907 17.3698 0 15.6773 0C13.9849 0 12.5363 0.602907 11.3311 1.80784C10.1259 3.01285 9.52344 4.46162 9.52344 6.15401V16C9.52344 17.6923 10.1262 19.1415 11.3311 20.3461C12.5361 21.5507 13.9849 22.1533 15.6773 22.1533Z" fill="white" fill-opacity="0.3"/><path d="M26.3888 12.6731C26.1459 12.4295 25.8568 12.3076 25.5234 12.3076C25.1904 12.3076 24.902 12.4295 24.6581 12.6731C24.4147 12.9167 24.293 13.2051 24.293 13.5383V16C24.293 18.3718 23.4498 20.4006 21.7639 22.0864C20.0785 23.7723 18.0495 24.6153 15.6775 24.6153C13.3057 24.6153 11.2769 23.7723 9.59089 22.0864C7.90509 20.401 7.06226 18.3719 7.06226 16V13.5383C7.06226 13.2051 6.94041 12.9167 6.69692 12.6731C6.45329 12.4295 6.16514 12.3076 5.83159 12.3076C5.49804 12.3076 5.20956 12.4295 4.96606 12.6731C4.72237 12.9167 4.60059 13.2051 4.60059 13.5383V16C4.60059 18.8333 5.54627 21.2981 7.4371 23.3941C9.32799 25.4901 11.6645 26.6919 14.4467 26.9994V29.5381H9.52373C9.19038 29.5381 8.90196 29.6601 8.6584 29.9037C8.41477 30.1472 8.29293 30.4357 8.29293 30.7691C8.29293 31.1019 8.41477 31.391 8.6584 31.6344C8.90196 31.8778 9.19038 32 9.52373 32H21.831C22.1643 32 22.4531 31.8779 22.6963 31.6344C22.9402 31.391 23.0622 31.1019 23.0622 30.7691C23.0622 30.4358 22.9402 30.1472 22.6963 29.9037C22.4532 29.6601 22.1644 29.5381 21.831 29.5381H16.9086V26.9994C19.6904 26.6919 22.0267 25.4901 23.9178 23.3941C25.8089 21.2981 26.7548 18.8333 26.7548 16V13.5383C26.7548 13.2051 26.6327 12.9169 26.3888 12.6731Z" fill="url(#paint1_linear_209_29909)"/><defs><linearGradient id="paint0_linear_209_29909" x1="5.22969e-08" y1="-5.22969e-08" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop stop-color="#FF1CD2"/><stop offset="1" stop-color="#B20DFF"/></linearGradient><linearGradient id="paint1_linear_209_29909" x1="-5.88081e-07" y1="-8.98822e-07" x2="4.72839" y2="35.6202" gradientUnits="userSpaceOnUse"><stop stop-color="#FF1CD2"/><stop offset="1" stop-color="#B20DFF"/></linearGradient></defs></svg>',
@@ -1928,31 +1931,48 @@ if (MC_EXT.skip) return;
                 if(name && url) sevenTvEmotes.set(name, url);
             });
         }
-        async function refreshSevenTvEmotes(){
-            if(cachedSevenTv?.updated && Date.now() - cachedSevenTv.updated < SEVENTV_CACHE_TTL) {
+        async function refreshSevenTvEmotes(siteCatalog, retry = true){
+            if(cachedSevenTv?.ownerId === KICK_OWNER_ID && cachedSevenTv.updated && Date.now() - cachedSevenTv.updated < SEVENTV_CACHE_TTL) {
                 console.log(`[MergedChat] 7TV loaded from cache: ${sevenTvEmotes.size}`);
                 return;
             }
             const results = await Promise.allSettled([
-                sevenTvRequest('https://7tv.io/v3/emote-sets/global'),
-                sevenTvRequest(`https://7tv.io/v3/users/kick/${KICK_CHANNEL_ID}`)
+                requestEmoteJson('https://7tv.io/v3/emote-sets/global'),
+                requestEmoteJson(`https://7tv.io/v3/users/kick/${KICK_OWNER_ID}`)
             ]);
             const fresh = new Map();
-            results.forEach(result => {
+            const backup = results.some(r => r.status === 'rejected') ? await siteCatalog : null;
+            let complete = true;
+            results.forEach((result, index) => {
                 if(result.status === 'fulfilled') addSevenTvSet(fresh, result.value);
+                else {
+                    const items = backup?.[index === 0 ? 'sevenTvGlobal' : 'sevenTvChannel'] || [];
+                    for (const item of items) if (item?.name && item.url) fresh.set(item.name, item.url);
+                    if (!items.length && !(index === 1 && result.reason?.status === 404)) complete = false;
+                }
             });
             if(fresh.size) {
-                sevenTvEmotes.clear();
+                if (complete) sevenTvEmotes.clear();
                 fresh.forEach((url, name) => sevenTvEmotes.set(name, url));
-                GM_setValue(SEVENTV_CACHE_KEY, { updated:Date.now(), emotes:[...sevenTvEmotes] });
+                GM_setValue(SEVENTV_CACHE_KEY, { ownerId:KICK_OWNER_ID, updated:complete ? Date.now() : 0, emotes:[...sevenTvEmotes] });
                 console.log(`[MergedChat] 7TV loaded: ${sevenTvEmotes.size}`);
                 syncSevenTvCatalog();
                 renderEmotePicker();
-            } else {
-                console.warn('[MergedChat] 7TV emotes could not be loaded');
+            }
+            if (!fresh.size || !complete) {
+                if (retry) {
+                    setTimeout(() => refreshSevenTvEmotes(siteCatalog, false).catch(error => console.warn('[MergedChat] 7TV error', error)), 30000);
+                    return;
+                }
+                const detail = results.map((result, index) => {
+                    const source = index === 0 ? 'global' : 'Kick';
+                    const reason = result.status === 'fulfilled' ? 'запрос выполнен'
+                        : result.reason?.statusText || result.reason?.message || 'ошибка сети';
+                    return source + ': ' + reason;
+                }).join(', ');
+                console.warn('[MergedChat] Не удалось обновить смайлы 7TV. ' + detail);
             }
         }
-        refreshSevenTvEmotes().catch(error => console.warn('[MergedChat] 7TV error', error));
         function sevenTvHtml(name){
             const url = sevenTvEmotes.get(name);
             return url ? `<img class="emote seventv" src="${esc(url)}" title="7TV: ${esc(name)}" alt="${esc(name)}">` : '';
@@ -1995,15 +2015,24 @@ if (MC_EXT.skip) return;
         }
         async function loadEmoteCatalog(){
             syncSevenTvCatalog();
-            try {
-                const data = await sevenTvRequest('https://pzdcflix.live/api/chat/emotes');
+            function applyCatalog(data){
                 ['kickChannel','kickGlobal','kickEmoji','kickRecent','vkChannel','vkRecent'].forEach(key => {
                     if(Array.isArray(data?.[key])) emoteCatalog[key] = data[key];
                 });
-            } catch(error) {
-                console.warn('[MergedChat] Emote catalog could not be loaded', error);
+                renderEmotePicker();
             }
-            renderEmotePicker();
+            if (typeof MC_EXT !== 'undefined') {
+                const bundled = await MC_EXT.send('emotes:bundled').catch(() => null);
+                if (bundled) applyCatalog(bundled);
+            }
+            try {
+                const data = await requestEmoteJson('https://pzdcflix.live/api/chat/emotes');
+                applyCatalog(data);
+                return data;
+            } catch(error) {
+                console.warn('[MergedChat] Каталог PZDCFLIX /api/chat/emotes: ' + error.message);
+                return null;
+            }
         }
         function setEmotePickerOpen(open){
             emotePicker.classList.toggle('open', open);
@@ -2013,7 +2042,7 @@ if (MC_EXT.skip) return;
                 setTimeout(() => emoteSearch.focus(), 0);
             }
         }
-        loadEmoteCatalog();
+        refreshSevenTvEmotes(loadEmoteCatalog()).catch(error => console.warn('[MergedChat] 7TV error', error));
         function applyFontSize(val){
             const n = Math.max(10, Math.min(50, Number(val) || 14));
             document.documentElement.style.setProperty('--fs', n + 'px');
@@ -2424,7 +2453,6 @@ if (MC_EXT.skip) return;
             } else {
                 (msg.badges||[]).forEach(b=>{ if(b.url) badges+=`<img class="badge img" src="${esc(b.url)}" title="${esc(b.name||'')}">`; });
                 if(msg.isOwner && !badges) badges+='<span class="badge" title="owner">🎬</span>';
-                else if(msg.isMod && !badges) badges+='<span class="badge" title="moderator">⚔️</span>';
             }
 
             let reply='';

@@ -11,6 +11,7 @@
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
+#donation-widget{box-sizing:border-box;width:100%;font:inherit;padding:6px 7px;border:1px solid var(--border);border-radius:5px;background:var(--surface-1);color:var(--text)}
 body{margin:0;background:var(--bg);color:var(--text);font:12px/1.45 Inter,system-ui,Arial,sans-serif}
 @keyframes breathe{50%{opacity:.35}}
 @keyframes open{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
