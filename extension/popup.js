@@ -79,8 +79,9 @@ $('open').addEventListener('click', async () => { await send('feed:open'); windo
 $('gifts').addEventListener('click', async () => { await send('gift:open'); window.close(); });
 async function refreshDonationStatus() {
     const s = await send('donation:status');
+    const lastReply = s.lastSocketReplyAt ? 'Последний ответ на ping: ' + new Date(s.lastSocketReplyAt).toLocaleTimeString('ru-RU') + '.' : '';
     $('donation-status').textContent = s.error || (s.configured
-        ? [s.socketStatus, s.problem, 'В очереди: ' + s.count].filter(Boolean).join(' ')
+        ? [s.socketStatus, lastReply, s.problem, 'В очереди: ' + s.count].filter(Boolean).join(' ')
         : 'Нужна ссылка виджета с доступом к сумме доната.');
 }
 send('gift:api', { path: 'me' }).then(async r => {

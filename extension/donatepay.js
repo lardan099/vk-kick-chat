@@ -121,6 +121,7 @@ export function observe(state, rows) {
 let checked = 0, problem = '';
 let liveSocket = null, reconnectAt = 0;
 let socketStatus = 'WebSocket ожидает подключения.';
+let lastSocketReplyAt = 0;
 async function notifyQueue() {
     const tabs = await chrome.tabs.query({ url: 'https://kick.com/popout/*/chat*' });
     await Promise.allSettled(tabs.map(tab => chrome.tabs.sendMessage(tab.id, { type: 'donation:changed' }, { frameId: 0 })));
@@ -144,13 +145,30 @@ async function ensureSocket(state, session) {
         const { token } = await auth.json();
         if (!token) { socketStatus = 'WebSocket: DonatePay не вернул токен подключения.'; return; }
         socketStatus = 'WebSocket: подключение к Centrifugo.';
+        lastSocketReplyAt = 0;
         const ws = liveSocket = new WebSocket(session.socketUrl);
         const channel = 'widgets:LastEvents#' + state.account;
         const send = (id, method, params) => ws.send(JSON.stringify({ id, method, params }));
-        let ping, expiry, next = 3;
-        let closeReason = '';
-        const close = reason => { closeReason = reason; ws.close(); };
+        let ping, replyTimer, expiry, next = 3, pendingPing = null;
+        function finish(reason) {
+            clearTimeout(handshake); clearTimeout(expiry); clearInterval(ping); clearTimeout(replyTimer);
+            if (liveSocket !== ws) return;
+            liveSocket = null;
+            socketStatus = 'WebSocket отключён. ' + reason + ' Ожидается переподключение.';
+        }
+        function close(reason) {
+            finish(reason);
+            ws.close();
+        }
         const handshake = setTimeout(() => close('Истекло время подключения или подписки.'), 12000);
+        function checkReply() {
+            if (liveSocket !== ws || pendingPing !== null) return;
+            if (ws.readyState !== WebSocket.OPEN) { close('Соединение прервано.'); return; }
+            pendingPing = next++;
+            replyTimer = setTimeout(() => close('Нет ответа на ping за 10 с.'), 10000);
+            try { send(pendingPing, 7, {}); }
+            catch { close('Не удалось отправить ping.'); }
+        }
         ws.onopen = () => {
             if (ws !== liveSocket) return;
             socketStatus = 'WebSocket открыт. Идёт авторизация.';
@@ -168,11 +186,16 @@ async function ensureSocket(state, session) {
                     if (id === 1) {
                         socketStatus = 'WebSocket: подписка на LastEvents.';
                         send(2, 1, { channel });
-                        expiry = setTimeout(() => ws.close(), Math.max(5, Number(result?.ttl || 21600) - 45) * 1000);
+                        expiry = setTimeout(() => close('Истекает срок токена.'), Math.max(5, Number(result?.ttl || 21600) - 45) * 1000);
                     } else if (id === 2) {
                         clearTimeout(handshake);
                         socketStatus = 'WebSocket подключён. Подписка LastEvents активна.';
-                        ping = setInterval(() => { if (ws.readyState === WebSocket.OPEN) send(next++, 7, {}); }, 25000);
+                        ping = setInterval(checkReply, 25000);
+                        checkReply();
+                    } else if (pendingPing !== null && id === pendingPing) {
+                        clearTimeout(replyTimer);
+                        pendingPing = null;
+                        lastSocketReplyAt = Date.now();
                     } else if (!id && result?.channel === channel) {
                         const event = result.data?.data;
                         if (event?.type !== 'event' || !event.notification?.id) continue;
@@ -186,13 +209,7 @@ async function ensureSocket(state, session) {
                 }
             } catch { close('Некорректный ответ Centrifugo.'); }
         };
-        ws.onclose = event => {
-            clearTimeout(handshake); clearTimeout(expiry); clearInterval(ping);
-            if (liveSocket === ws) {
-                liveSocket = null;
-                socketStatus = 'WebSocket отключён. ' + (closeReason || 'Код закрытия ' + event.code + '.');
-            }
-        };
+        ws.onclose = event => finish('Код закрытия ' + event.code + '.');
     } catch { socketStatus += ' Не удалось завершить этап. Будет повтор.'; }
 }
 export function configureDonations(input) {
@@ -206,7 +223,7 @@ export function configureDonations(input) {
         Object.assign(state, auth, { token });
         observe(state, rows);
         await save(state);
-        liveSocket?.close(); liveSocket = null; reconnectAt = 0;
+        liveSocket?.close(); liveSocket = null; reconnectAt = 0; lastSocketReplyAt = 0;
         checked = Date.now(); problem = '';
         await ensureSocket(state, auth);
         return { configured: true };
@@ -237,7 +254,7 @@ export function pollDonations() {
 export async function donationStatus(showCard = false) {
     const state = await load();
     const item = state?.queue[0];
-    return { configured: !!state, problem, socketStatus, count: state?.queue.length || 0,
+    return { configured: !!state, problem, socketStatus, lastSocketReplyAt, count: state?.queue.length || 0,
         card: showCard && item ? { ...item, key: state.account + '/' + item.id } : null };
 }
 
@@ -254,13 +271,17 @@ export function resolveDonation(msg, api) {
         const state = await load();
         const item = state?.queue[0];
         if (!item || msg.key !== state.account + '/' + item.id) throw new Error('Карточка уже закрыта. Обновляю очередь.');
-        const me = await api({ path: 'me' });
-        if (me.data?.allowed !== true || !me.data.csrf) throw new Error('Для выдачи нужен вход в аккаунт команды.');
         if (msg.type === 'donation:grant') {
+            const me = await api({ path: 'me' });
+            if (me.status !== 200 || me.data?.allowed !== true || !me.data.csrf) {
+                if (me.status === 403 && me.data?.error === 'FORBIDDEN') throw new Error('Войдите на PZDCFLIX через Kick под аккаунтом команды.');
+                throw new Error(me.error || me.data?.message || 'Сайт не подтвердил доступ к выдаче' + (me.status ? ' (HTTP ' + me.status + ').' : '.'));
+            }
             if (item.operation && item.operation.telegramId !== msg.telegramId) throw new Error('В другом окне уже выбрали получателя. Проверьте карточку.');
             if (!item.operation) {
                 if (!item.candidates.includes(msg.target)) throw new Error('Выберите получателя из доната.');
                 const lookup = await api({ path: 'lookup?q=' + encodeURIComponent(msg.target) });
+                if (lookup.status !== 200) throw new Error(lookup.error || lookup.data?.message || 'Не удалось проверить получателя.');
                 const user = lookup.data?.recipient;
                 if (!user || user.banned || user.telegramId !== msg.telegramId) throw new Error('Получатель изменился или недоступен. Проверьте его ещё раз.');
                 item.operation = { operationId: await donationOperation(msg.key), telegramId: user.telegramId,
@@ -270,7 +291,7 @@ export function resolveDonation(msg, api) {
             const r = await api({ path: 'grant', method: 'POST', csrf: me.data.csrf, body: JSON.stringify(item.operation) });
             if (r.status !== 200 || r.data?.state !== 'done' || r.data?.recipient?.telegramId !== item.operation.telegramId || r.data.months !== item.months)
                 throw new Error(r.data?.message || r.error || 'Сервер не подтвердил выдачу. Проверьте результат.');
-        }
+        } else if (msg.type !== 'donation:skip') throw new Error('Неизвестное действие с донатом.');
         state.queue.shift();
         await save(state);
         return { ok: true, telegramId: item.operation?.telegramId };

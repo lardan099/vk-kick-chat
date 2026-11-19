@@ -1,15 +1,15 @@
 {
-  "version": "6.73",
-  "notes": "Подписки за донаты DonatePay: подтверждение прямо в чате по @нику или Telegram ID. Встроенный каталог смайлов Kick и VK, исправления 7TV и перезагрузки чата. Убраны лишние мечи у модераторов.",
+  "version": "6.78",
+  "notes": "В компактной карточке доната обе кнопки расположены внизу. Добавлены контроль WebSocket DonatePay и исправления проверки входа при выдаче.",
   "files": [
     {
       "path": "background.js",
-      "sha256": "428bf2f3b0ea943ebe7f622711b8cd652217614db0230e0ef85cd7c94b91b428",
-      "size": 39313
+      "sha256": "1f4285af30e5db849f004f83cf25bf9bd0cbd3c5245482c38d48d5418294355f",
+      "size": 40610
     },
     {
       "path": "chat.js",
-      "sha256": "5e8c73f1e05486233101d8116a04306918f372bb050415e94d3063b4dd993c46",
+      "sha256": "9c0601c054eb2d0ebcc59b88a3a7ac6e3c23347b23c31e5bd619343b35d9b5a5",
       "size": 341245
     },
     {
@@ -19,13 +19,13 @@
     },
     {
       "path": "donatepay.js",
-      "sha256": "6f6c8ebef17fbdcf9d5a3338294714e0b52a77e0a4ccfa9fa21dafb98c8c6085",
-      "size": 16060
+      "sha256": "2f1a82c969bf6a9ee94713349a743d33e080279ef62c69cd24e1b54dd3ee9ef8",
+      "size": 17602
     },
     {
       "path": "donation-panel.js",
-      "sha256": "6277a6b2eb081c26c1add8092c5b5abfe0f4a0427d489857ce5734465f458a86",
-      "size": 8474
+      "sha256": "035394e0109fe953e54a13290c041abc2abb4aca8e7a2d24400befc39496d8dc",
+      "size": 11443
     },
     {
       "path": "emote-catalog.json",
@@ -79,7 +79,7 @@
     },
     {
       "path": "manifest.json",
-      "sha256": "f41a942bb41810a4399c89e825fab9fd7786b64a6d43e70c3801b452b63da377",
+      "sha256": "8a9dd24b6110fdabc2a610bcd1d8ff3da611a0aef3b65f2c402ee192abe1f810",
       "size": 2333
     },
     {
@@ -104,8 +104,8 @@
     },
     {
       "path": "popup.js",
-      "sha256": "90c14bffb5f2a40164e2035db899b579b940ab40ab6a73f567e9522ea7f2ac16",
-      "size": 8657
+      "sha256": "58bbba415f3bd6d54d181ced67b5ac1e4c07b8b1e2b5f761738c72f2a03afc88",
+      "size": 8828
     },
     {
       "path": "theme.js",

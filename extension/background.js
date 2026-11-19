@@ -524,27 +524,44 @@ const GIFT_PATH = /^(me|grant|lookup\?[\w%.=&@-]{1,200}|history\?[\w%.=&@-]{0,30
 // с входом, который отвечает, и помним его 10 минут.
 let giftSiteCache = { site: '', at: 0 };
 let donationAccessUntil = 0;
-async function giftSite() {
-    if (giftSiteCache.site && Date.now() - giftSiteCache.at < 10 * 60 * 1000) return giftSiteCache.site;
-    const signedIn = [];
-    for (const site of CONFIG.giftSites) {
-        const c = await chrome.cookies.get({ url: site + '/', name: 'pzdc_session' }).catch(() => null);
-        if (c) signedIn.push(site);
-    }
-    for (const site of signedIn) {
-        try {
-            await fetch(`${site}/api/rec/admin/me`, { credentials: 'include', cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(6000) });
+function cachedGiftSite() {
+    return Date.now() - giftSiteCache.at < 10 * 60 * 1000 ? giftSiteCache.site : '';
+}
+async function giftAccess() {
+    const cached = cachedGiftSite();
+    const sites = new Set(cached ? [cached] : []);
+    const cookies = await Promise.all(CONFIG.giftSites.map(site =>
+        chrome.cookies.get({ url: site + '/', name: 'pzdc_session' }).catch(() => null)));
+    CONFIG.giftSites.forEach((site, i) => { if (cookies[i]) sites.add(site); });
+    if (!sites.size) sites.add(CONFIG.giftSites[0]);
+    let failure;
+    for (const site of sites) {
+        const result = await requestGiftApi(site, 'me', 'GET', {});
+        if (result.status === 200 && result.data?.allowed === true && result.data.csrf) {
             giftSiteCache = { site, at: Date.now() };
-            return site;
-        } catch (e) { }
+            return result;
+        }
+        if (giftSiteCache.site === site) giftSiteCache = { site: '', at: 0 };
+        if (result.status === 429) return result;
+        // A stale session on one mirror cannot establish a denial on the others.
+        if (!failure || failure.data?.error === 'FORBIDDEN') failure = result;
     }
-    return signedIn[0] || CONFIG.giftSites[0];
+    return failure;
 }
 async function giftApi(msg) {
     const path = String(msg.path || '');
     const method = msg.method === 'POST' ? 'POST' : 'GET';
     if (!GIFT_PATH.test(path) || (method === 'POST') !== (path === 'grant')) return { error: 'Запрос не разрешён' };
-    const site = await giftSite();
+    if (path === 'me') return giftAccess();
+    let site = cachedGiftSite();
+    if (!site) {
+        const access = await giftAccess();
+        if (access.data?.allowed !== true || access.status !== 200) return access;
+        site = access.site;
+    }
+    return requestGiftApi(site, path, method, msg);
+}
+async function requestGiftApi(site, path, method, msg) {
     const headers = { accept: 'application/json' };
     if (method === 'POST') {
         headers['content-type'] = 'application/json';
@@ -554,15 +571,17 @@ async function giftApi(msg) {
     try {
         const r = await fetch(`${site}/api/rec/admin/${path}`, {
             method, headers, body: method === 'POST' ? msg.body : undefined,
-            credentials: 'include', cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(method === 'POST' ? 60000 : 20000)
+            credentials: 'include', cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(method === 'POST' ? 60000 : path === 'me' ? 6000 : 20000)
         });
         let data = null;
         try { data = await r.json(); } catch (e) { }
+        if (giftSiteCache.site === site && (r.status >= 500 || r.status === 401 || r.status === 403 || !data)) giftSiteCache = { site: '', at: 0 };
+        if (r.ok && path === 'me' && (data?.allowed !== true || !data.csrf)) return { error: 'Сайт вернул неверный ответ проверки доступа.', site };
         return { status: r.status, data, site };
     } catch (e) {
         // Сам запрос не повторяем (выдача могла пройти), но следующий выберет сайт заново.
-        giftSiteCache = { site: '', at: 0 };
-        return { error: e && e.name === 'TimeoutError' ? 'Сайт долго не отвечает. Нажми «Проверить результат»: второй оплаты не будет.' : 'Сайт не ответил. Проверь интернет.' };
+        if (giftSiteCache.site === site) giftSiteCache = { site: '', at: 0 };
+        return { site, error: e?.name === 'TimeoutError' ? 'Истекло время ожидания ответа сайта.' : 'Сайт не ответил. Проверь интернет.' };
     }
 }
 async function openGifts(q, history) {
@@ -723,7 +742,10 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
             const result = await donationStatus(true);
             if (result.card && Date.now() >= donationAccessUntil) {
                 const access = await giftApi({ path: 'me' });
-                if (access.data?.allowed !== true) return { card: null, count: 0 };
+                if (access.data?.allowed !== true) {
+                    if (access.data?.error === 'FORBIDDEN') return { card: null, count: 0 };
+                    return { error: access.error || access.data?.message || 'Не удалось проверить доступ.' };
+                }
                 donationAccessUntil = Date.now() + 30000;
             }
             return result;
@@ -731,7 +753,7 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
         'donation:skip': () => feed && resolveDonation(msg, giftApi),
         'donation:grant': () => feed && resolveDonation(msg, giftApi),
         'gift:open': () => openGifts(msg.q, !!msg.history),
-        'gift:login': () => giftSite().then(site => chrome.tabs.create({ url: site + '/zapisi/manage', active: true })),
+        'gift:login': () => giftAccess().then(r => chrome.tabs.create({ url: r.site + '/zapisi/manage', active: true })),
         'update:check': () => checkUpdate(),
         'update:open': () => openUpdater(!!msg.auto)
     };
